@@ -30,10 +30,10 @@ const char *tok_type_to_string(int token)
 char *tok_string(struct token *token)
 {
     const char *type_str = tok_type_to_string(token->token);
-    const char *template = "%s: `%s` on ln:%d:%d";
+    const char *template = "%s: %s";
 
-    char *str = calloc(strlen(type_str) + strlen(template) + 8 + (sizeof(int) * 2), sizeof(char));
-    sprintf(str, template, type_str, token->value, token->ln, token->clm);
+    char *str = calloc(strlen(type_str) + strlen(template) + 8, sizeof(char));
+    sprintf(str, template, type_str, token->value);
 
     return str;
 }

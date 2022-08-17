@@ -6,6 +6,8 @@
 #include "include/utils.h"
 
 #include "include/lexer.h"
+#include "include/parser.h"
+#include "include/interpret.h"
 
 int main(int argc, char *argv[])
 {
@@ -84,7 +86,9 @@ int main(int argc, char *argv[])
     }
 
     lexer_T *lexer = init_lexer(src);
-    token_print(lexer);
+    parser_T *parser = init_parser(lexer);
+    struct ASTnode *root = parser_parse(parser, 0);
+    log(1, "%i\n", interpret(root));
 
     return 0;
 }
