@@ -8,6 +8,7 @@
 #include "include/lexer.h"
 #include "include/parser.h"
 #include "include/interpret.h"
+#include "include/codegen.h"
 
 int main(int argc, char *argv[])
 {
@@ -32,6 +33,12 @@ int main(int argc, char *argv[])
             output_file = calloc(strlen(argv[i + 1]) + 8, sizeof(char));
             strcpy(output_file, argv[i + 1]);
         }
+
+        int val = !(strcmp(argv[i], "-r"));
+
+#if !(val)
+    #define run
+#endif
     }
 
     char *path = argv[1];
@@ -88,7 +95,16 @@ int main(int argc, char *argv[])
     lexer_T *lexer = init_lexer(src);
     parser_T *parser = init_parser(lexer);
     struct ASTnode *root = parser_parse(parser, 0);
-    log(1, "%i\n", interpret(root));
+    printf("interpreter output: %i\n", interpret(root));
+    char *output_asm = calloc(strlen(output_src) + strlen(".s") + 8, sizeof(char));
+    strcat(output_asm, output_src); strcat(output_asm, ".s");
+    codegen_T *codegen = init_codegen(output_asm);
+    codegen_code(codegen, root);
+    exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
+    exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
+#ifdef run
+    exec_sys("echo -e \"compiler output: $(./%s)\"", output_src);
+#endif
 
     return 0;
 }
