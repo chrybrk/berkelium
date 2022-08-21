@@ -34,3 +34,4 @@ int ASTnode_op(struct token *token);
 parser_T *init_parser(lexer_T *lexer);
 struct ASTnode *primary(parser_T *parser);
 struct ASTnode *parser_parse(parser_T *parser, int tok_prec);
+void parser_parse_statements(parser_T *parser, char *outfile);

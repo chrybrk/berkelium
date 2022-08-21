@@ -33,7 +33,9 @@ main:
 	idivq	%r9
 	movq	%rax,%r8
 	subq	%r8, %r10
-	movq	%r10, %rdi
+	movq	$100, %r8
+	addq	%r10, %r8
+	movq	%r8, %rdi
 	call	printint
 	movl	$0, %eax
 	popq	%rbp

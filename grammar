@@ -1,3 +1,11 @@
+statements: statement
+     | statement statements
+     ;
+
+statement: 'print' '(' expression ')' ';'
+     | expression ';'
+     ;
+
 expression: additive_expression
     ;
 

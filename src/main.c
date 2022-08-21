@@ -94,14 +94,16 @@ int main(int argc, char *argv[])
 
     lexer_T *lexer = init_lexer(src);
     parser_T *parser = init_parser(lexer);
-    struct ASTnode *root = parser_parse(parser, 0);
-    printf("interpreter output: %i\n", interpret(root));
+    // struct ASTnode *root = parser_parse(parser, 0);
+    // printf("interpreter output: %i\n", interpret(root));
     char *output_asm = calloc(strlen(output_src) + strlen(".s") + 8, sizeof(char));
     strcat(output_asm, output_src); strcat(output_asm, ".s");
-    codegen_T *codegen = init_codegen(output_asm);
-    codegen_code(codegen, root);
+    parser_parse_statements(parser, output_asm);
+    // codegen_T *codegen = init_codegen(output_asm);
+    // codegen_code(codegen, root);
     exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
     exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
+    exec_sys("rm ./%s.o", output_src);
 #ifdef run
     exec_sys("echo -e \"compiler output: $(./%s)\"", output_src);
 #endif

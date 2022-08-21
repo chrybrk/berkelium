@@ -3,6 +3,8 @@
 
 #include <ctype.h>
 
+static char *keyword[] = { "print" };
+
 struct token *init_token(int token, char *value, int ln, int clm)
 {
     struct token *new_tok = calloc(1, sizeof(struct token));
@@ -22,7 +24,12 @@ const char *tok_type_to_string(int token)
         case T_MINUS: return "T_MINUS";
         case T_STAR: return "T_STAR";
         case T_SLASH: return "T_SLASH";
+        case T_LPAREN: return "T_LPAREN";
+        case T_RPAREN: return "T_RPAREN";
+        case T_SEMI: return "T_SEMI";
         case T_INTLIT: return "T_INTLIT";
+        case T_PRINT: return "T_PRINT";
+        case T_EOF: return "T_EOF";
         default: return "unknown token";
     }
 }
@@ -102,6 +109,25 @@ struct token *lexer_parse_int(lexer_T *lexer)
     return init_token(T_INTLIT, word, ln, clm);
 }
 
+struct token *lexer_parse_id(lexer_T *lexer)
+{
+    char *word = calloc(1, sizeof(char));
+    int ln = lexer->ln; int clm = lexer->clm;
+
+    while(isalpha(lexer->c))
+    {
+        word = realloc(word, (strlen(word) + 128) * sizeof(char));
+        strcat(word, &lexer->c);
+        lexer_advance(lexer);
+    }
+
+    int keyword_loc = is_keyword(word);
+
+    if (keyword_loc >= 0) return init_token(which_keyword(keyword_loc), word, ln, clm);
+
+    return NULL;
+}
+
 struct token *lexer_next_token(lexer_T *lexer)
 {
     while (lexer->c != '\0')
@@ -109,6 +135,7 @@ struct token *lexer_next_token(lexer_T *lexer)
         skip(lexer);
 
         if (isdigit(lexer->c)) return lexer_parse_int(lexer);
+        if (isalpha(lexer->c)) return lexer_parse_id(lexer);
 
         switch (lexer->c)
         {
@@ -116,12 +143,15 @@ struct token *lexer_next_token(lexer_T *lexer)
             case '-': return lex_advance_current(lexer, T_MINUS);
             case '*': return lex_advance_current(lexer, T_STAR);
             case '/': return lex_advance_current(lexer, T_SLASH);
+            case ';': return lex_advance_current(lexer, T_SEMI);
+            case '(': return lex_advance_current(lexer, T_LPAREN);
+            case ')': return lex_advance_current(lexer, T_RPAREN);
             case '\0': break;
             default: log(3, "ln:%d:%d\n\tUnrecognised character `%c`", lexer->ln, lexer->clm, lexer->c);
         }
     }
 
-    return init_token(T_EOF, NULL, lexer->ln, lexer->clm);
+    return init_token(T_EOF, NULL, lexer->ln, lexer->clm - 1);
 }
 
 void token_print(lexer_T *lexer)
@@ -139,4 +169,26 @@ void token_print(lexer_T *lexer)
     lexer->i = 0;
     lexer->ln = 1;
     lexer->clm = 0;
+}
+
+int is_keyword(char *s)
+{
+    int size = sizeof(keyword) / sizeof(keyword[0]);
+
+    for ( int i = 0; i < size; i++ )
+    {
+        if (!strcmp(s, keyword[i])) return i;
+    }
+
+    return -1;
+}
+
+int which_keyword(int loc)
+{
+    switch(loc)
+    {
+        case 0: return T_PRINT;
+    }
+
+    return -1;
 }

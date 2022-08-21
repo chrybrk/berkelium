@@ -1,5 +1,6 @@
 #include "include/parser.h"
 #include "include/macro.h"
+#include "include/codegen.h"
 
 struct ASTnode *init_ASTnode(int op, struct ASTnode *left, struct ASTnode *right, int intvalue)
 {
@@ -91,7 +92,7 @@ struct ASTnode *parser_parse(parser_T *parser, int tok_prec)
     left = primary(parser);
 
     tok = parser->token;
-    if (tok->token == T_EOF)
+    if (tok->token == T_SEMI || tok->token == T_RPAREN)
         return left;
 
     while (ASTnode_op_prec(parser->token) > tok_prec)
@@ -102,9 +103,48 @@ struct ASTnode *parser_parse(parser_T *parser, int tok_prec)
         left = init_ASTnode(ASTnode_op(tok), left, right, 0);
 
         tok = parser->token;
-        if (tok->token == T_EOF)
+        if (tok->token == T_SEMI || tok->token == T_RPAREN)
             return left;
     }
 
     return left;
+}
+
+void expected_tok(parser_T *parser, int token)
+{
+    if (parser->token->token != token) log(3, "ln:%d:%d\n\tsyntax err, expected: `%s` got `%s`", parser->token->ln, parser->token->clm, tok_type_to_string(token), tok_type_to_string(parser->token->token));
+    parser->token = lexer_next_token(parser->lexer);
+}
+
+void parser_parse_statements(parser_T *parser, char *outfile)
+{
+    codegen_T *codegen = init_codegen(outfile);
+    preamble(codegen->outfile);
+
+    struct ASTnode *tree;
+
+    while (1)
+    {
+        switch (parser->token->token)
+        {
+            case T_PRINT:
+                {
+                    parser->token = lexer_next_token(parser->lexer);
+                    expected_tok(parser, T_LPAREN);
+                    tree = parser_parse(parser, 0);
+                    int reg = genAST(codegen, tree);
+                    asm_printint(codegen->outfile, reg);
+                    expected_tok(parser, T_RPAREN);
+                    break;
+                }
+            default: log(3, "ln:%d:%d\n\tsyntax err, tok: %s", parser->token->ln, parser->token->clm, tok_string(parser->token));
+        }
+
+        if (parser->token->token == T_SEMI) parser->token = lexer_next_token(parser->lexer);
+
+        if (parser->token->token == T_EOF) break;
+    }
+
+    postamble(codegen->outfile);
+    fclose(codegen->outfile);
 }

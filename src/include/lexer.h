@@ -10,7 +10,11 @@ enum
   T_MINUS,
   T_STAR,
   T_SLASH,
+  T_LPAREN,
+  T_RPAREN,
+  T_SEMI,
   T_INTLIT,
+  T_PRINT,
   T_EOF
 };
 
@@ -41,3 +45,5 @@ void lexer_advance(lexer_T *lexer);
 struct token *lexer_next_token(lexer_T *lexer);
 
 void token_print(lexer_T* lexer);
+int is_keyword(char *s);
+int which_keyword(int loc);

@@ -12,6 +12,9 @@ codegen_T *init_codegen(char *outfile);
 void codegen_code(codegen_T *codegen, struct ASTnode *node);
 int genAST(codegen_T *codegen, struct ASTnode *node);
 
+void preamble(FILE *outfile);
+void postamble(FILE *outfile);
+
 // some asm related stuff
 int reg_alloc();
 void reg_free(int ptr);

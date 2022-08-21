@@ -21,19 +21,21 @@ printint:
 main:
 	pushq	%rbp
 	movq	%rsp, %rbp
-	movq	$20, %r8
-	movq	$400, %r9
-	addq	%r8, %r9
-	movq	$23, %r8
+	movq	$2, %r8
+	movq	$3, %r9
 	movq	$5, %r10
-	imulq	%r8, %r10
-	movq	$14, %r8
-	movq	%r10,%rax
+	imulq	%r9, %r10
+	addq	%r8, %r10
+	movq	$8, %r8
+	movq	$3, %r9
+	movq	%r8,%rax
 	cqo
-	idivq	%r8
-	movq	%rax,%r10
-	addq	%r9, %r10
-	movq	%r10, %rdi
+	idivq	%r9
+	movq	%rax,%r8
+	subq	%r8, %r10
+	movq	$100, %r8
+	addq	%r10, %r8
+	movq	%r8, %rdi
 	call	printint
 	movl	$0, %eax
 	popq	%rbp
