@@ -1,5 +1,6 @@
 #include "include/codegen.h"
 #include "include/macro.h"
+#include "include/glob.h"
 
 char *reg[4] = { "%r8", "%r9", "%r10", "%r11" };
 int free_reg[4] = { 0 };
@@ -56,18 +57,18 @@ void postamble(FILE *outfile)
 void codegen_code(codegen_T *codegen, struct ASTnode *node)
 {
     preamble(codegen->outfile);
-    int reg = genAST(codegen, node);
+    int reg = genAST(codegen, node, -1);
     asm_printint(codegen->outfile, reg);
     postamble(codegen->outfile);
     fclose(codegen->outfile);
 }
 
-int genAST(codegen_T *codegen, struct ASTnode *node)
+int genAST(codegen_T *codegen, struct ASTnode *node, int reg)
 {
     int left, right;
 
-    if (node->left) left = genAST(codegen, node->left);
-    if (node->right) right = genAST(codegen, node->right);
+    if (node->left) left = genAST(codegen, node->left, -1);
+    if (node->right) right = genAST(codegen, node->right, left);
 
     switch (node->op)
     {
@@ -75,7 +76,10 @@ int genAST(codegen_T *codegen, struct ASTnode *node)
         case AST_SUB: return asm_sub(codegen->outfile, left, right);
         case AST_MUL: return asm_mul(codegen->outfile, left, right);
         case AST_DIV: return asm_div(codegen->outfile, left, right);
-        case AST_INTLIT: return asm_load(codegen->outfile, node->intvalue);
+        case AST_INTLIT: return asm_loadint(codegen->outfile, node->intvalue);
+        case AST_IDENT: return asm_loadglob(codegen->outfile, symb_table_find(node->intvalue)->name);
+        case AST_LVAL: return asm_storeglob(codegen->outfile, symb_table_find(node->intvalue)->name, reg);
+        case AST_ASSIGN: return right;
         default: log(3, "%s", "Unrecognised ASTnode:Type");
     }
 
@@ -115,12 +119,25 @@ void reg_freeall()
 }
 
 // some asm functions
-int asm_load(FILE *outfile, int value)
+int asm_loadint(FILE *outfile, int value)
 {
     int allocated_reg = reg_alloc();
     fprintf(outfile, "\tmovq\t$%d, %s\n", value, reg[allocated_reg]);
 
     return allocated_reg;
+}
+
+int asm_loadglob(FILE *outfile, char *value)
+{
+    int r = reg_alloc();
+    fprintf(outfile, "\tmovq\t%s(\%%rip), %s\n", value, reg[r]);
+    return r;
+}
+
+int asm_storeglob(FILE *outfile, char *name, int r)
+{
+    fprintf(outfile, "\tmovq\t%s, %s(\%%rip)\n", reg[r], name);
+    return r;
 }
 
 int asm_add(FILE *outfile, int r1, int r2)
@@ -157,6 +174,11 @@ int asm_div(FILE *outfile, int r1, int r2)
     reg_free(r2);
 
     return r1;
+}
+
+void asm_genglob(FILE *outfile, char *sym)
+{
+  fprintf(outfile, "\t.comm\t%s,8,8\n", sym);
 }
 
 // function

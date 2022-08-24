@@ -51,7 +51,7 @@ int ASTnode_op_prec(struct token *token)
         case T_SLASH:
             return 20;
 
-        default: log(3, "ln:%d:%d\n\tsyntax err, tok: %s", token->ln, token->clm, tok_string(token));
+        default: log(3, "ln:%d:%d\n\ttok_prec:syntax err, tok: %s", token->ln, token->clm, tok_string(token));
     }
 
     return 0;
@@ -78,13 +78,26 @@ struct ASTnode *primary(parser_T *parser)
 
                 return node;
             }
+        case T_IDENT:
+            {
+                int id = symb_table_get(parser->token->value);
+
+                if (id == -1)
+                {
+                    log(3, "ln:%d:%d\n\tUndefined variable `%s`", parser->token->ln, parser->token->clm - 1, parser->token->value);
+                }
+                struct ASTnode *node = ASTnode_leaf(AST_IDENT, id);
+                eat(parser, T_IDENT);
+
+                return node;
+            }
         default: log(3, "ln:%d:%d\n\tsyntax err", parser->token->ln, parser->token->clm);
     }
 
     return 0;
 }
 
-struct ASTnode *parser_parse(parser_T *parser, int tok_prec)
+struct ASTnode *parser_parse_expr(parser_T *parser, int tok_prec)
 {
     struct ASTnode *left, *right;
     struct token *tok;
@@ -95,11 +108,11 @@ struct ASTnode *parser_parse(parser_T *parser, int tok_prec)
     if (tok->token == T_SEMI || tok->token == T_RPAREN)
         return left;
 
-    while (ASTnode_op_prec(parser->token) > tok_prec)
+    while (ASTnode_op_prec(tok) > tok_prec)
     {
         parser->token = lexer_next_token(parser->lexer);
 
-        right = parser_parse(parser, ASTnode_op_prec(tok));
+        right = parser_parse_expr(parser, ASTnode_op_prec(tok));
         left = init_ASTnode(ASTnode_op(tok), left, right, 0);
 
         tok = parser->token;
@@ -110,10 +123,80 @@ struct ASTnode *parser_parse(parser_T *parser, int tok_prec)
     return left;
 }
 
-void expected_tok(parser_T *parser, int token)
+struct token *eat(parser_T *parser, int token)
 {
     if (parser->token->token != token) log(3, "ln:%d:%d\n\tsyntax err, expected: `%s` got `%s`", parser->token->ln, parser->token->clm, tok_type_to_string(token), tok_type_to_string(parser->token->token));
+    struct token *to_return = parser->token;
     parser->token = lexer_next_token(parser->lexer);
+    return to_return;
+}
+
+void expected_tok(parser_T *parser, int token)
+{
+    if (parser->token->token != token) log(3, "ln:%d:%d\n\tsyntax err, expected: `%s` got `%s`", parser->token->ln, parser->token->clm - 1, tok_type_to_string(token), tok_type_to_string(parser->token->token));
+    parser->token = lexer_next_token(parser->lexer);
+}
+
+void parser_parse_print(parser_T *parser, codegen_T *codegen)
+{
+    struct ASTnode *tree;
+    eat(parser, T_PRINT);
+    expected_tok(parser, T_LPAREN);
+    tree = parser_parse_expr(parser, 0);
+    int reg = genAST(codegen, tree, -1);
+    asm_printint(codegen->outfile, reg);
+    expected_tok(parser, T_RPAREN);
+    expected_tok(parser, T_SEMI);
+}
+
+void parser_parse_variable_decl(parser_T *parser, codegen_T *codegen)
+{
+    eat(parser, i32);
+
+    int clm = parser->lexer->clm;
+    int ln = parser->lexer->ln;
+    char c = parser->lexer->c;
+    unsigned int i = parser->lexer->i;
+    struct token *tok = parser->token;
+
+    char *ident = calloc(1, sizeof(strlen(parser->token->value)));
+    strcpy(ident, parser->token->value);
+    eat(parser, T_IDENT);
+
+    init_symb_table(ident);
+    asm_genglob(codegen->outfile, ident);
+
+    if (parser->token->token == T_SEMI)
+        eat(parser, T_SEMI);
+    else
+    {
+        parser->lexer->clm = clm;
+        parser->lexer->ln = ln;
+        parser->lexer->c = c;
+        parser->lexer->i = i;
+        parser->token = tok;
+    }
+}
+
+void parser_parse_assignment(parser_T *parser, codegen_T *codegen)
+{
+    struct ASTnode *left, *right, *tree;
+    int id = symb_table_get(parser->token->value);
+
+    if (id == -1)
+    {
+        log(3, "ln:%d:%d\n\tUndefined variable `%s`", parser->token->ln, parser->token->clm - 1, parser->token->value);
+    }
+
+    right = ASTnode_leaf(AST_LVAL, id);
+    eat(parser, T_IDENT);
+    expected_tok(parser, T_EQU);
+
+    left = parser_parse_expr(parser, 0);
+    tree = init_ASTnode(AST_ASSIGN, left, right, 0);
+    genAST(codegen, tree, -1);
+    reg_freeall();
+    expected_tok(parser, T_SEMI);
 }
 
 void parser_parse_statements(parser_T *parser, char *outfile)
@@ -121,28 +204,18 @@ void parser_parse_statements(parser_T *parser, char *outfile)
     codegen_T *codegen = init_codegen(outfile);
     preamble(codegen->outfile);
 
-    struct ASTnode *tree;
-
-    while (1)
+    int flag = 1;
+    while (flag)
     {
         switch (parser->token->token)
         {
-            case T_PRINT:
-                {
-                    parser->token = lexer_next_token(parser->lexer);
-                    expected_tok(parser, T_LPAREN);
-                    tree = parser_parse(parser, 0);
-                    int reg = genAST(codegen, tree);
-                    asm_printint(codegen->outfile, reg);
-                    expected_tok(parser, T_RPAREN);
-                    break;
-                }
-            default: log(3, "ln:%d:%d\n\tsyntax err, tok: %s", parser->token->ln, parser->token->clm, tok_string(parser->token));
+            case T_PRINT: parser_parse_print(parser, codegen); break;
+            case i32: parser_parse_variable_decl(parser, codegen); break;
+            case T_IDENT: parser_parse_assignment(parser, codegen); break;
+            case T_EOF: flag = 0; break;
+            default: parser_parse_expr(parser, 0);
+            // default: log(3, "ln:%d:%d\n\tsyntax err, tok: %s", parser->token->ln, parser->token->clm, tok_string(parser->token));
         }
-
-        if (parser->token->token == T_SEMI) parser->token = lexer_next_token(parser->lexer);
-
-        if (parser->token->token == T_EOF) break;
     }
 
     postamble(codegen->outfile);

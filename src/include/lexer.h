@@ -13,9 +13,14 @@ enum
   T_LPAREN,
   T_RPAREN,
   T_SEMI,
+  T_EQU,
   T_INTLIT,
+  T_IDENT,
   T_PRINT,
-  T_EOF
+  T_EOF,
+
+  i32,
+  i16
 };
 
 struct token
@@ -47,3 +52,5 @@ struct token *lexer_next_token(lexer_T *lexer);
 void token_print(lexer_T* lexer);
 int is_keyword(char *s);
 int which_keyword(int loc);
+int is_data_type(char *s);
+int which_data_type(int loc);

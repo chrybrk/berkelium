@@ -3,6 +3,9 @@ statements: statement
      ;
 
 statement: 'print' '(' expression ')' ';'
+     | 'i32' ident ';'
+     | 'i32' ident '=' ident ';'
+     | ident '=' ident ';'
      | expression ';'
      ;
 
@@ -22,4 +25,7 @@ multiplicative_expression:
     ;
 
 number:  T_INTLIT
+         ;
+
+ident:   T_IDENT
          ;

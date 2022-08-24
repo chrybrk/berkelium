@@ -4,6 +4,7 @@
 #include <ctype.h>
 
 static char *keyword[] = { "print" };
+static char *data_type[] = { "i32", "i16" };
 
 struct token *init_token(int token, char *value, int ln, int clm)
 {
@@ -27,9 +28,13 @@ const char *tok_type_to_string(int token)
         case T_LPAREN: return "T_LPAREN";
         case T_RPAREN: return "T_RPAREN";
         case T_SEMI: return "T_SEMI";
+        case T_EQU: return "T_EQU";
         case T_INTLIT: return "T_INTLIT";
+        case T_IDENT: return "T_IDENT";
         case T_PRINT: return "T_PRINT";
         case T_EOF: return "T_EOF";
+        case i32: return "i32";
+        case i16: return "i16";
         default: return "unknown token";
     }
 }
@@ -114,7 +119,7 @@ struct token *lexer_parse_id(lexer_T *lexer)
     char *word = calloc(1, sizeof(char));
     int ln = lexer->ln; int clm = lexer->clm;
 
-    while(isalpha(lexer->c))
+    while(isalpha(lexer->c) || isdigit(lexer->c) || lexer->c == '_')
     {
         word = realloc(word, (strlen(word) + 128) * sizeof(char));
         strcat(word, &lexer->c);
@@ -122,10 +127,12 @@ struct token *lexer_parse_id(lexer_T *lexer)
     }
 
     int keyword_loc = is_keyword(word);
+    int data_type_loc = is_data_type(word);
 
     if (keyword_loc >= 0) return init_token(which_keyword(keyword_loc), word, ln, clm);
+    if (data_type_loc >= 0) return init_token(which_data_type(data_type_loc), word, ln, clm);
 
-    return NULL;
+    return init_token(T_IDENT, word, ln, clm);
 }
 
 struct token *lexer_next_token(lexer_T *lexer)
@@ -144,6 +151,7 @@ struct token *lexer_next_token(lexer_T *lexer)
             case '*': return lex_advance_current(lexer, T_STAR);
             case '/': return lex_advance_current(lexer, T_SLASH);
             case ';': return lex_advance_current(lexer, T_SEMI);
+            case '=': return lex_advance_current(lexer, T_EQU);
             case '(': return lex_advance_current(lexer, T_LPAREN);
             case ')': return lex_advance_current(lexer, T_RPAREN);
             case '\0': break;
@@ -183,11 +191,33 @@ int is_keyword(char *s)
     return -1;
 }
 
+int is_data_type(char *s)
+{
+    int size = sizeof(data_type) / sizeof(data_type[0]);
+
+    for ( int i = 0; i < size; i++ )
+    {
+        if (!strcmp(s, data_type[i])) return i;
+    }
+
+    return -1;
+}
+
 int which_keyword(int loc)
 {
     switch(loc)
     {
         case 0: return T_PRINT;
+    }
+
+    return -1;
+}
+
+int which_data_type(int loc)
+{
+    switch(loc)
+    {
+        case 0: return i32;
     }
 
     return -1;

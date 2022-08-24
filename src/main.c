@@ -12,6 +12,8 @@
 
 int main(int argc, char *argv[])
 {
+    int arg_r = 0;
+
     if ( argc < 2 ) log(3, "%s", "bk: no input file.");
 
     char *output_file = NULL;
@@ -29,16 +31,13 @@ int main(int argc, char *argv[])
 
         if (!strcmp(argv[i], "-o"))
         {
-            if (argc == i + 1) log(3, "%s", "bk: cannot assign null to output path.");
+            if (argc == i + 1 || *argv[i + 1] == '-') log(3, "%s", "bk: cannot assign null to output path.");
             output_file = calloc(strlen(argv[i + 1]) + 8, sizeof(char));
             strcpy(output_file, argv[i + 1]);
         }
 
         int val = !(strcmp(argv[i], "-r"));
-
-#if !(val)
-    #define run
-#endif
+        if (val) arg_r = 1;
     }
 
     char *path = argv[1];
@@ -104,9 +103,7 @@ int main(int argc, char *argv[])
     exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
     exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
     exec_sys("rm ./%s.o", output_src);
-#ifdef run
-    exec_sys("echo -e \"compiler output: $(./%s)\"", output_src);
-#endif
+    if (arg_r) exec_sys("echo -e \"compiler output: $(./%s)\"", output_src);
 
     return 0;
 }
