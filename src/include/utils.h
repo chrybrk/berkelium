@@ -10,3 +10,7 @@ char* allocstr(char* dest, char* src);
         sprintf(src, temp, __VA_ARGS__); \
         system(src); \
                                             }
+
+
+void swap(char *s);
+void collect(char *s, char c);

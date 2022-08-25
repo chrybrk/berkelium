@@ -65,3 +65,23 @@ char* allocstr(char* dest, char* src)
 
     return dst;
 }
+
+void swap(char *s)
+{
+    for (int i = (int)strlen(s) / 2 - 1; i >= 0; i--)
+    {
+        char a = s[i];
+        s[i] = s[(int)strlen(s) - i - 1];
+        s[(int)strlen(s) - i - 1] = a;
+    }
+}
+
+void collect(char *s, char c)
+{
+    char *c_x = calloc(1, sizeof(char));
+    c_x[0] = c;
+    c_x[1] = '\0';
+    if (s == NULL) s = calloc(strlen(s) + strlen(c_x) + 8, sizeof(char));
+    else s = realloc(s, (strlen(s) + strlen(c_x) + 8) * sizeof(char));
+    strcat(s, c_x);
+}

@@ -16,7 +16,11 @@ int main(int argc, char *argv[])
 
     if ( argc < 2 ) log(3, "%s", "bk: no input file.");
 
-    char *output_file = NULL;
+    char *fp = argv[1];
+    char *file_extention = NULL;
+    char *filename = NULL;
+    char *output_src = NULL;
+
     for( unsigned int i = 0; i < argc; i++ )
     {
         if (!strcmp(argv[i], "-h"))
@@ -32,74 +36,60 @@ int main(int argc, char *argv[])
         if (!strcmp(argv[i], "-o"))
         {
             if (argc == i + 1 || *argv[i + 1] == '-') log(3, "%s", "bk: cannot assign null to output path.");
-            output_file = calloc(strlen(argv[i + 1]) + 8, sizeof(char));
-            strcpy(output_file, argv[i + 1]);
+            output_src = calloc(strlen(argv[i + 1]) + 8, sizeof(char));
+            strcpy(output_src, argv[i + 1]);
         }
 
         int val = !(strcmp(argv[i], "-r"));
         if (val) arg_r = 1;
     }
 
-    char *path = argv[1];
-    char *output_src = calloc(1, sizeof(char));
-    char *filename = NULL;
-    char *src = read_file(path);
-
-    if (output_file == NULL)
+    for (int i = strlen(fp); i >= 0; i--)
     {
-        int output_file_location = 0;
-        int flag = 1;
-        for (unsigned int i = strlen(path); i > 0; i--)
-        {
-            if ( path[i] == '/' )
-            {
-                output_file_location = i + 1; break;
-            }
-
-            if (flag == 1)
-            {
-                if (path[i] == '.') flag = 0;
-            }
-            else
-            {
-                if (filename == NULL) filename = calloc(1, sizeof(char));
-                char *c = calloc(1, sizeof(char));
-                c[0] = path[i]; c[1] = '\0';
-                filename = realloc(filename, (strlen(filename) + 8)  *sizeof(char));
-                strcat(filename, c);
-            }
-        }
-        for (unsigned int i = 0; i < output_file_location; i++)
-        {
-            char *c = calloc(1, sizeof(char));
-            c[0] = path[i]; c[1] = '\0';
-            output_src = realloc(output_src, (strlen(output_src) + 8)  *sizeof(char));
-            strcat(output_src, c);
-        }
-    } else strcpy(output_src, output_file);
-
-    if (filename != NULL)
-    {
-        for (unsigned int i = 0; i < strlen(filename) / 2; i++)
-        {
-            char a = filename[i];
-            filename[i] = filename[strlen(filename) - 1 - i];
-            filename[strlen(filename) - 1 - i] = a;
-        }
-
-        output_src = realloc(output_src, (strlen(output_src) + strlen(filename) + 8)  *sizeof(char));
-        strcat(output_src, filename);
+        if (fp[i] == '.') break;
+        if (file_extention == NULL) file_extention = calloc(1, sizeof(char));
+        collect(file_extention, fp[i]);
     }
 
-    lexer_T *lexer = init_lexer(src);
+    for (int i = (strlen(fp) - strlen(file_extention) - 2); i >= 0; i--)
+    {
+        if (fp[i] == '/') break;
+        if (filename == NULL) filename = calloc(1, sizeof(char));
+        collect(filename, fp[i]);
+    }
+
+    swap(file_extention);
+    swap(filename);
+
+    int size = strlen(fp) - (strlen(file_extention) + strlen(filename) + 1);
+
+    if (output_src == NULL)
+    {
+        if (size == 0)
+        {
+            output_src = calloc(strlen(filename) + 8, sizeof(char));
+            strcat(output_src, "./");
+            strcat(output_src, filename);
+        }
+        else
+        {
+            for (int i = 0; i < size; i++)
+            {
+                if (output_src == NULL) output_src = calloc(1, sizeof(char));
+                collect(output_src, fp[i]);
+            }
+            output_src = realloc(output_src, (strlen(output_src) + strlen(filename)) * sizeof(char));
+            strcat(output_src, filename);
+        }
+    }
+
+    lexer_T *lexer = init_lexer(read_file(fp));
     parser_T *parser = init_parser(lexer);
-    // struct ASTnode *root = parser_parse(parser, 0);
-    // printf("interpreter output: %i\n", interpret(root));
+
     char *output_asm = calloc(strlen(output_src) + strlen(".s") + 8, sizeof(char));
     strcat(output_asm, output_src); strcat(output_asm, ".s");
     parser_parse_statements(parser, output_asm);
-    // codegen_T *codegen = init_codegen(output_asm);
-    // codegen_code(codegen, root);
+
     exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
     exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
     exec_sys("rm ./%s.o", output_src);
