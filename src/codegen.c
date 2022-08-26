@@ -2,7 +2,8 @@
 #include "include/macro.h"
 #include "include/glob.h"
 
-char *reg[4] = { "%r8", "%r9", "%r10", "%r11" };
+static char *reg[4] = { "%r8", "%r9", "%r10", "%r11" };
+static char *breg[4] = { "%r8b", "%r9b", "%r10b", "%r11b" };
 int free_reg[4] = { 0 };
 
 codegen_T *init_codegen(char *outfile)
@@ -76,6 +77,12 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg)
         case AST_SUB: return asm_sub(codegen->outfile, left, right);
         case AST_MUL: return asm_mul(codegen->outfile, left, right);
         case AST_DIV: return asm_div(codegen->outfile, left, right);
+        case AST_EQU: return asm_equ(codegen->outfile, left, right);
+        case AST_NEQ: return asm_neq(codegen->outfile, left, right);
+        case AST_GT: return asm_gt(codegen->outfile, left, right);
+        case AST_LT: return asm_lt(codegen->outfile, left, right);
+        case AST_GEQ: return asm_geq(codegen->outfile, left, right);
+        case AST_LEQ: return asm_leq(codegen->outfile, left, right);
         case AST_INTLIT: return asm_loadint(codegen->outfile, node->intvalue);
         case AST_IDENT: return asm_loadglob(codegen->outfile, symb_table_find(node->intvalue)->name);
         case AST_LVAL: return asm_storeglob(codegen->outfile, symb_table_find(node->intvalue)->name, reg);
@@ -176,9 +183,48 @@ int asm_div(FILE *outfile, int r1, int r2)
     return r1;
 }
 
+int asm_equ(FILE *outfile, int r1, int r2)
+{
+    return asm_compare(outfile, r1, r2, "sete");
+}
+
+int asm_neq(FILE *outfile, int r1, int r2)
+{
+    return asm_compare(outfile, r1, r2, "setne");
+}
+
+int asm_gt(FILE *outfile, int r1, int r2)
+{
+    return asm_compare(outfile, r1, r2, "setg");
+}
+
+int asm_lt(FILE *outfile, int r1, int r2)
+{
+    return asm_compare(outfile, r1, r2, "setl");
+}
+
+int asm_geq(FILE *outfile, int r1, int r2)
+{
+    return asm_compare(outfile, r1, r2, "setge");
+}
+
+int asm_leq(FILE *outfile, int r1, int r2)
+{
+    return asm_compare(outfile, r1, r2, "setle");
+}
+
 void asm_genglob(FILE *outfile, char *sym)
 {
   fprintf(outfile, "\t.comm\t%s,8,8\n", sym);
+}
+
+int asm_compare(FILE *outfile, int r1, int r2, char *cond)
+{
+    fprintf(outfile, "\tcmpq\t%s, %s\n", reg[r2], reg[r1]);
+    fprintf(outfile, "\t%s\t%s\n", cond, breg[r2]);
+    fprintf(outfile, "\tandq\t$255,%s\n", reg[r2]);
+    reg_free(r1);
+    return r2;
 }
 
 // function

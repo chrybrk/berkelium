@@ -13,12 +13,21 @@ enum
   T_LPAREN,
   T_RPAREN,
   T_SEMI,
+  T_ASSIGN,
+  T_NOT,
   T_EQU,
+  T_NEQ,
+  T_GT,
+  T_LT,
+  T_GEQ,
+  T_LEQ,
   T_INTLIT,
   T_IDENT,
-  T_PRINT,
   T_EOF,
 
+  // keywords
+  T_PRINT,
+  // data types
   i32,
   i16
 };

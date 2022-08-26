@@ -1,13 +1,15 @@
+gcc src/*.c -Isrc/include -o ./bin/c/bk
+
 test_dir="./test/"
-files=`ls $test_dir*.bk`
+files=`ls $test_dir`
 
 for file in $files
 do
-    ./bin/c/bk $file -o ./bin/bk/test_case > ./bin/bk/err.txt
+    ./bin/c/bk $test_dir$file -o ./bin/bk/test_case > ./bin/bk/err.txt
     if [[ $? -eq 0 ]]; then
-        echo "test_case: pass"
+        echo "[file: $file][status: pass]"
     else
-        echo "test_case: failed"
+        echo "[file: $file][status: failed]"
     fi
 done
 

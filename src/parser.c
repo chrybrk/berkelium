@@ -32,6 +32,12 @@ int ASTnode_op(struct token *token)
         case T_MINUS: return AST_SUB;
         case T_STAR: return AST_MUL;
         case T_SLASH: return AST_DIV;
+        case T_EQU: return AST_EQU;
+        case T_NEQ: return AST_NEQ;
+        case T_GT: return AST_GT;
+        case T_LT: return AST_LT;
+        case T_GEQ: return AST_GEQ;
+        case T_LEQ: return AST_LEQ;
         default: log(3, "Unrecognised token `%s`", tok_string(token));
     }
 
@@ -51,7 +57,17 @@ int ASTnode_op_prec(struct token *token)
         case T_SLASH:
             return 20;
 
-        default: log(3, "ln:%d:%d\n\ttok_prec:syntax err, tok: %s", token->ln, token->clm, tok_string(token));
+        case T_EQU:
+        case T_NEQ:
+            return 30;
+        
+        case T_LT:
+        case T_GT:
+        case T_LEQ:
+        case T_GEQ:
+            return 40;
+
+        default: log(3, "ln:%d:%d\n\tsyntax err, tok: %s", token->ln, token->clm, tok_string(token));
     }
 
     return 0;
@@ -190,7 +206,7 @@ void parser_parse_assignment(parser_T *parser, codegen_T *codegen)
 
     right = ASTnode_leaf(AST_LVAL, id);
     eat(parser, T_IDENT);
-    expected_tok(parser, T_EQU);
+    expected_tok(parser, T_ASSIGN);
 
     left = parser_parse_expr(parser, 0);
     tree = init_ASTnode(AST_ASSIGN, left, right, 0);

@@ -29,6 +29,12 @@ const char *tok_type_to_string(int token)
         case T_RPAREN: return "T_RPAREN";
         case T_SEMI: return "T_SEMI";
         case T_EQU: return "T_EQU";
+        case T_ASSIGN:  return "T_ASSIGN";
+        case T_NEQ: return "T_NEQ";
+        case T_GT: return "T_GT";
+        case T_LT: return "T_LT";
+        case T_GEQ: return "T_GEQ";
+        case T_LEQ: return "T_LEQ";
         case T_INTLIT: return "T_INTLIT";
         case T_IDENT: return "T_IDENT";
         case T_PRINT: return "T_PRINT";
@@ -99,6 +105,23 @@ struct token *lex_advance_current(lexer_T *lexer, int token)
     return tok;
 }
 
+struct token *lex_advance_twos(lexer_T *lexer, char next, int if_its, int else_its)
+{
+    if (lexer->src[lexer->i + 1] == next)
+    {
+        char *word = calloc(1, sizeof(char));
+        word[0] = lexer->c;
+        word[1] = next;
+        word[2] = '\0';
+        struct token *tok = init_token(if_its, word, lexer->ln, lexer->clm);
+        lexer_advance(lexer);
+        lexer_advance(lexer);
+        
+        return tok;
+    }
+    return lex_advance_current(lexer, else_its);
+}
+
 struct token *lexer_parse_int(lexer_T *lexer)
 {
     char *word = calloc(1, sizeof(char));
@@ -151,7 +174,10 @@ struct token *lexer_next_token(lexer_T *lexer)
             case '*': return lex_advance_current(lexer, T_STAR);
             case '/': return lex_advance_current(lexer, T_SLASH);
             case ';': return lex_advance_current(lexer, T_SEMI);
-            case '=': return lex_advance_current(lexer, T_EQU);
+            case '=': return lex_advance_twos(lexer, '=', T_EQU, T_ASSIGN);
+            case '!': return lex_advance_twos(lexer, '=', T_NEQ, T_NOT);
+            case '<': return lex_advance_twos(lexer, '=', T_LEQ, T_LT);
+            case '>': return lex_advance_twos(lexer, '=', T_GEQ, T_GT);
             case '(': return lex_advance_current(lexer, T_LPAREN);
             case ')': return lex_advance_current(lexer, T_RPAREN);
             case '\0': break;

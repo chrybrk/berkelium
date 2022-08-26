@@ -28,8 +28,15 @@ int asm_add(FILE *outfile, int r1, int r2);
 int asm_sub(FILE *outfile, int r1, int r2);
 int asm_mul(FILE *outfile, int r1, int r2);
 int asm_div(FILE *outfile, int r1, int r2);
+int asm_equ(FILE *outfile, int r1, int r2);
+int asm_neq(FILE *outfile, int r1, int r2);
+int asm_gt(FILE *outfile, int r1, int r2);
+int asm_lt(FILE *outfile, int r1, int r2);
+int asm_geq(FILE *outfile, int r1, int r2);
+int asm_leq(FILE *outfile, int r1, int r2);
 
 void asm_genglob(FILE *outfile, char *sym);
+int asm_compare(FILE *outfile, int r1, int r2, char *cond);
 
 // function
 void asm_printint(FILE *outfile, int r);
