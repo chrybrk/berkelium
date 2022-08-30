@@ -17,13 +17,21 @@ void create_symb_table(char *name)
     else log(3, "%s", "GLOBAL_SYMB_TABLE\n\tinvalid size");
 }
 
-void init_symb_table(char *name)
+int init_symb_table(char *name)
 {
     for (int i = 0; i < glob_pos; i++)
     {
         if (!strcmp(name, glob_symb[i]->name))
-            glob_init[i] = 1;
+        {
+            if (glob_init[i] == 0)
+            {
+                glob_init[i] = 1;
+                return 0;
+            }
+        }
     }
+
+    return 1;
 }
 
 int symb_table_get(char *name)
@@ -32,7 +40,7 @@ int symb_table_get(char *name)
     {
         if (!strcmp(name, glob_symb[i]->name))
         {
-            if (glob_init[i] == 0) log(3, "seg fault, `%s` not found", name);
+            // if (glob_init[i] == 0) log(3, "seg fault, `%s` not found", name);
             return i;
         }
     }

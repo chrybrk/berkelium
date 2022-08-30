@@ -59,7 +59,6 @@ void codegen_code(codegen_T *codegen, struct ASTnode *node)
 {
     preamble(codegen->outfile);
     int reg = genAST(codegen, node, -1);
-    asm_printint(codegen->outfile, reg);
     postamble(codegen->outfile);
     fclose(codegen->outfile);
 }
@@ -67,6 +66,18 @@ void codegen_code(codegen_T *codegen, struct ASTnode *node)
 int genAST(codegen_T *codegen, struct ASTnode *node, int reg)
 {
     int left, right;
+
+    switch (node->op)
+    {
+        case AST_GLUE: {
+                           genAST(codegen, node->left, -1);
+                           reg_freeall();
+                           genAST(codegen, node->right, -1);
+                           reg_freeall();
+
+                           return -1;
+                       }
+    }
 
     if (node->left) left = genAST(codegen, node->left, -1);
     if (node->right) right = genAST(codegen, node->right, left);
@@ -87,6 +98,7 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg)
         case AST_IDENT: return asm_loadglob(codegen->outfile, symb_table_find(node->intvalue)->name);
         case AST_LVAL: return asm_storeglob(codegen->outfile, symb_table_find(node->intvalue)->name, reg);
         case AST_ASSIGN: return right;
+        case AST_PRINT: asm_printint(codegen->outfile, left); return -1;
         default: log(3, "%s", "Unrecognised ASTnode:Type");
     }
 
@@ -143,6 +155,9 @@ int asm_loadglob(FILE *outfile, char *value)
 
 int asm_storeglob(FILE *outfile, char *name, int r)
 {
+    int idx = init_symb_table(name);
+    if (idx == 0) asm_genglob(outfile, name);
+
     fprintf(outfile, "\tmovq\t%s, %s(\%%rip)\n", reg[r], name);
     return r;
 }

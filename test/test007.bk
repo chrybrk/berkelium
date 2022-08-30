@@ -1,11 +1,14 @@
 i32 t1 = 100;
 i32 t2 = 120;
 
-if (t1 > t2)
+print(t1);
+print(t2);
+
+print(t1 + t2);
+
 {
-    print(t1);
-}
-else
-{
-    print(t2);
+    print(10 * 20);
+    {
+        print(10 / 2);
+    }
 }

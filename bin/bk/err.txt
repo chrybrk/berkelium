@@ -1,2 +1,2 @@
-[ERR]: ln:4:1
-	Undefined variable `if`
+[ERR]: ln:11:2
+	syntax err

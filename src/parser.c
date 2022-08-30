@@ -204,7 +204,6 @@ struct ASTnode *parser_parse_variable_decl(parser_T *parser)
 struct ASTnode *parser_parse_assignment(parser_T *parser)
 {
     struct ASTnode *left, *right, *tree;
-    init_symb_table(parser->token->value);
     int id = symb_table_get(parser->token->value);
 
     if (id == -1)
@@ -249,12 +248,17 @@ struct ASTnode *parser_parse_compound_statements(parser_T *parser)
 
     while (parser->token->token != T_RBRACE)
     {
-        tree = parser_parse_statement(parser);
+        switch (parser->token->token)
+        {
+            case T_LBRACE: tree = parser_parse_compound_statements(parser); break;
+            default: tree = parser_parse_statement(parser);
+        }
+        // tree = parser_parse_statement(parser);
 
         if (tree)
         {
             if (left == NULL) left = tree;
-            else init_ASTnode(AST_GLUE, left, tree, 0);
+            else left = init_ASTnode(AST_GLUE, left, tree, 0);
         }
     }
 
@@ -279,7 +283,7 @@ struct ASTnode *parser_parse(parser_T *parser)
         if (tree)
         {
             if (left == NULL) left = tree;
-            else init_ASTnode(AST_GLUE, left, tree, 0);
+            else left = init_ASTnode(AST_GLUE, left, tree, 0);
         }
     }
 
