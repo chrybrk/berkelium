@@ -153,19 +153,24 @@ void expected_tok(parser_T *parser, int token)
     parser->token = lexer_next_token(parser->lexer);
 }
 
-void parser_parse_print(parser_T *parser, codegen_T *codegen)
+struct ASTnode *parser_parse_print(parser_T *parser)
 {
     struct ASTnode *tree;
+
     eat(parser, T_PRINT);
     expected_tok(parser, T_LPAREN);
+
     tree = parser_parse_expr(parser, 0);
-    int reg = genAST(codegen, tree, -1);
-    asm_printint(codegen->outfile, reg);
+    // int reg = genAST(codegen, tree, -1);
+
+    // asm_printint(codegen->outfile, reg);
     expected_tok(parser, T_RPAREN);
     expected_tok(parser, T_SEMI);
+
+    return ASTnode_unary(AST_PRINT, tree, 0);
 }
 
-void parser_parse_variable_decl(parser_T *parser, codegen_T *codegen)
+struct ASTnode *parser_parse_variable_decl(parser_T *parser)
 {
     eat(parser, i32);
 
@@ -179,8 +184,8 @@ void parser_parse_variable_decl(parser_T *parser, codegen_T *codegen)
     strcpy(ident, parser->token->value);
     eat(parser, T_IDENT);
 
-    init_symb_table(ident);
-    asm_genglob(codegen->outfile, ident);
+    create_symb_table(ident);
+    // asm_genglob(codegen->outfile, ident);
 
     if (parser->token->token == T_SEMI)
         eat(parser, T_SEMI);
@@ -192,11 +197,14 @@ void parser_parse_variable_decl(parser_T *parser, codegen_T *codegen)
         parser->lexer->i = i;
         parser->token = tok;
     }
+
+    return NULL;
 }
 
-void parser_parse_assignment(parser_T *parser, codegen_T *codegen)
+struct ASTnode *parser_parse_assignment(parser_T *parser)
 {
     struct ASTnode *left, *right, *tree;
+    init_symb_table(parser->token->value);
     int id = symb_table_get(parser->token->value);
 
     if (id == -1)
@@ -210,30 +218,70 @@ void parser_parse_assignment(parser_T *parser, codegen_T *codegen)
 
     left = parser_parse_expr(parser, 0);
     tree = init_ASTnode(AST_ASSIGN, left, right, 0);
-    genAST(codegen, tree, -1);
-    reg_freeall();
+    // genAST(codegen, tree, -1);
+    // reg_freeall();
     expected_tok(parser, T_SEMI);
+
+    return tree;
 }
 
-void parser_parse_statements(parser_T *parser, char *outfile)
+struct ASTnode *parser_parse_statement(parser_T *parser)
 {
-    codegen_T *codegen = init_codegen(outfile);
-    preamble(codegen->outfile);
+    struct ASTnode *tree;
 
-    int flag = 1;
-    while (flag)
+    switch (parser->token->token)
     {
-        switch (parser->token->token)
+        case T_PRINT: tree = parser_parse_print(parser); break;
+        case i32: tree = parser_parse_variable_decl(parser); break;
+        case T_IDENT: tree = parser_parse_assignment(parser); break;
+        default: tree = parser_parse_expr(parser, 0);
+    }
+
+    return tree;
+}
+
+struct ASTnode *parser_parse_compound_statements(parser_T *parser)
+{
+    struct ASTnode *tree;
+    struct ASTnode *left = NULL;
+
+    eat(parser, T_LBRACE);
+
+    while (parser->token->token != T_RBRACE)
+    {
+        tree = parser_parse_statement(parser);
+
+        if (tree)
         {
-            case T_PRINT: parser_parse_print(parser, codegen); break;
-            case i32: parser_parse_variable_decl(parser, codegen); break;
-            case T_IDENT: parser_parse_assignment(parser, codegen); break;
-            case T_EOF: flag = 0; break;
-            default: parser_parse_expr(parser, 0);
-            // default: log(3, "ln:%d:%d\n\tsyntax err, tok: %s", parser->token->ln, parser->token->clm, tok_string(parser->token));
+            if (left == NULL) left = tree;
+            else init_ASTnode(AST_GLUE, left, tree, 0);
         }
     }
 
-    postamble(codegen->outfile);
-    fclose(codegen->outfile);
+    eat(parser, T_RBRACE);
+
+    return left;
+}
+
+struct ASTnode *parser_parse(parser_T *parser)
+{
+    struct ASTnode *tree;
+    struct ASTnode *left = NULL;
+
+    while (parser->token->token != T_EOF)
+    {
+        switch (parser->token->token)
+        {
+            case T_LBRACE: tree = parser_parse_compound_statements(parser); break;
+            default: tree = parser_parse_statement(parser); break;
+        }
+
+        if (tree)
+        {
+            if (left == NULL) left = tree;
+            else init_ASTnode(AST_GLUE, left, tree, 0);
+        }
+    }
+
+    return left;
 }

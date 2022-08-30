@@ -2,6 +2,10 @@ statements: statement
      | statement statements
      ;
 
+compound_statement: '{' '}'
+     | '{' statement '}'
+     | '{' statement statements '}'
+
 statement: 'print' '(' expression ')' ';'
      | 'i32' ident ';'
      | 'i32' ident '=' ident ';'

@@ -19,7 +19,9 @@ enum
     AST_INTLIT,
     AST_IDENT,
     AST_LVAL,
-    AST_ASSIGN
+    AST_ASSIGN,
+    AST_PRINT,
+    AST_GLUE
 };
 
 struct ASTnode
@@ -41,9 +43,9 @@ struct ASTnode *ASTnode_leaf(int op, int intvalue);
 struct ASTnode *ASTnode_unary(int op, struct ASTnode *left, int intvalue);
 int ASTnode_op(struct token *token);
 
-
 parser_T *init_parser(lexer_T *lexer);
+struct token *eat(parser_T *parser, int token);
 struct ASTnode *primary(parser_T *parser);
 struct ASTnode *parser_parse_expr(parser_T *parser, int tok_prec);
-struct token *eat(parser_T *parser, int token);
-void parser_parse_statements(parser_T *parser, char *outfile);
+struct ASTnode *parser_parse_compound_statements(parser_T *parser);
+struct ASTnode *parser_parse(parser_T *parser);

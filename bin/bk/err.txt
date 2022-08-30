@@ -1,0 +1,2 @@
+[ERR]: ln:4:1
+	Undefined variable `if`

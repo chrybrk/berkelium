@@ -12,6 +12,8 @@ enum
   T_SLASH,
   T_LPAREN,
   T_RPAREN,
+  T_LBRACE,
+  T_RBRACE,
   T_SEMI,
   T_ASSIGN,
   T_NOT,

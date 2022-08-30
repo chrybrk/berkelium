@@ -88,12 +88,13 @@ int main(int argc, char *argv[])
 
     char *output_asm = calloc(strlen(output_src) + strlen(".s") + 8, sizeof(char));
     strcat(output_asm, output_src); strcat(output_asm, ".s");
-    parser_parse_statements(parser, output_asm);
+    // parser_parse_statements(parser, output_asm);
+    struct ASTnode *node = parser_parse(parser);
 
-    exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
-    exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
-    exec_sys("rm ./%s.o", output_src);
-    if (arg_r) exec_sys("echo -e \"compiler output: $(./%s)\"", output_src);
+    // exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
+    // exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
+    // exec_sys("rm ./%s.o", output_src);
+    // if (arg_r) exec_sys("echo -e \"compiler output: $(./%s)\"", output_src);
 
     return 0;
 }

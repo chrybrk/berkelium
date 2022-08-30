@@ -27,6 +27,8 @@ const char *tok_type_to_string(int token)
         case T_SLASH: return "T_SLASH";
         case T_LPAREN: return "T_LPAREN";
         case T_RPAREN: return "T_RPAREN";
+        case T_LBRACE: return "T_LBRACE";
+        case T_RBRACE: return "T_RBRACE";
         case T_SEMI: return "T_SEMI";
         case T_EQU: return "T_EQU";
         case T_ASSIGN:  return "T_ASSIGN";
@@ -180,6 +182,8 @@ struct token *lexer_next_token(lexer_T *lexer)
             case '>': return lex_advance_twos(lexer, '=', T_GEQ, T_GT);
             case '(': return lex_advance_current(lexer, T_LPAREN);
             case ')': return lex_advance_current(lexer, T_RPAREN);
+            case '{': return lex_advance_current(lexer, T_LBRACE);
+            case '}': return lex_advance_current(lexer, T_RBRACE);
             case '\0': break;
             default: log(3, "ln:%d:%d\n\tUnrecognised character `%c`", lexer->ln, lexer->clm, lexer->c);
         }
