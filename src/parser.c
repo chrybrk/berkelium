@@ -248,6 +248,22 @@ struct ASTnode *parser_parse_if(parser_T *parser)
     return init_ASTnode(AST_IF, condtionalAST, ifAST, elseAST, 0);
 }
 
+struct ASTnode *parser_parse_while(parser_T *parser)
+{
+    struct ASTnode *condtionalAST, *bodyAST;
+
+    eat(parser, T_WHILE);
+    eat(parser, T_LPAREN);
+
+    condtionalAST = parser_parse_expr(parser, 0);
+    if (condtionalAST->op < AST_EQU || condtionalAST->op > AST_LEQ) log(3, "invalid cmp, `%s`", tok_type_to_string(condtionalAST->op));
+    eat(parser, T_RPAREN);
+
+    bodyAST = parser_parse_compound_statements(parser);
+
+    return init_ASTnode(AST_WHILE, condtionalAST, NULL, bodyAST, 0);
+}
+
 struct ASTnode *parser_parse_statement(parser_T *parser)
 {
     struct ASTnode *tree;
@@ -256,6 +272,7 @@ struct ASTnode *parser_parse_statement(parser_T *parser)
     {
         case T_PRINT: tree = parser_parse_print(parser); break;
         case T_IF: tree = parser_parse_if(parser); break;
+        case T_WHILE: tree = parser_parse_while(parser); break;
         case i32: tree = parser_parse_variable_decl(parser); break;
         case T_IDENT: tree = parser_parse_assignment(parser); break;
         default: tree = parser_parse_expr(parser, 0);

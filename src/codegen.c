@@ -115,6 +115,25 @@ int genIF(codegen_T *codegen, struct ASTnode *node)
     return -1;
 }
 
+int genWHILE(codegen_T *codegen, struct ASTnode *node)
+{
+    int Lstart, Lend;
+
+    Lstart = get_label(); Lend = get_label();
+    asm_label(codegen->outfile, Lstart);
+
+    genAST(codegen, node->left, Lend, node->op);
+    reg_freeall();
+
+    genAST(codegen, node->right, -1, node->op);
+    reg_freeall();
+
+    asm_jump(codegen->outfile, Lstart);
+    asm_label(codegen->outfile, Lend);
+
+    return -1;
+}
+
 int genAST(codegen_T *codegen, struct ASTnode *node, int reg, int parent_op)
 {
     int left, right;
@@ -122,6 +141,7 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg, int parent_op)
     switch (node->op)
     {
         case AST_IF: return genIF(codegen, node);
+        case AST_WHILE: return genWHILE(codegen, node);
         case AST_GLUE: {
                            genAST(codegen, node->left, -1, node->op);
                            reg_freeall();
@@ -149,7 +169,7 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg, int parent_op)
         case AST_GEQ:
         case AST_LEQ:
             {
-                if (parent_op == AST_IF) return asm_compare_jump(codegen->outfile, node->op, left, right, reg);
+                if (parent_op == AST_IF || parent_op == AST_WHILE) return asm_compare_jump(codegen->outfile, node->op, left, right, reg);
                 else return asm_compare_set(codegen->outfile, node->op, left, right);
             }
 

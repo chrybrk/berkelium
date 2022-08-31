@@ -31,6 +31,7 @@ enum
   T_PRINT,
   T_IF,
   T_ELSE,
+  T_WHILE,
   // data types
   i32,
   i16

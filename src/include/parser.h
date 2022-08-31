@@ -22,6 +22,7 @@ enum
     AST_ASSIGN,
     AST_PRINT,
     AST_IF,
+    AST_WHILE,
     AST_GLUE
 };
 
