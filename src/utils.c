@@ -81,7 +81,6 @@ void collect(char *s, char c)
     char *c_x = calloc(1, sizeof(char));
     c_x[0] = c;
     c_x[1] = '\0';
-    if (s == NULL) s = calloc(strlen(s) + strlen(c_x) + 8, sizeof(char));
-    else s = realloc(s, (strlen(s) + strlen(c_x) + 8) * sizeof(char));
+    s = realloc(s, (strlen(s) + strlen(c_x) + 8) * sizeof(char));
     strcat(s, c_x);
 }

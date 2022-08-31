@@ -1,2 +1,0 @@
-[ERR]: ln:11:2
-	syntax err

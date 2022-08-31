@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
         if (val) arg_r = 1;
     }
 
-    for (int i = strlen(fp); i >= 0; i--)
+    for (int i = strlen(fp) - 1; i >= 0; i--)
     {
         if (fp[i] == '.') break;
         if (file_extention == NULL) file_extention = calloc(1, sizeof(char));
@@ -91,12 +91,16 @@ int main(int argc, char *argv[])
     // parser_parse_statements(parser, output_asm);
     struct ASTnode *node = parser_parse(parser);
     codegen_T *codegen = init_codegen(output_asm);
-    codegen_code(codegen, node);
 
+#define if_execute_debug
+
+#ifdef if_execute_debug
+    codegen_code(codegen, node);
     exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
     exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
     exec_sys("rm ./%s.o", output_src);
     if (arg_r) exec_sys("echo -e \"compiler output: $(./%s)\"", output_src);
+#endif
 
     return 0;
 }

@@ -4,7 +4,34 @@
 
 static char *reg[4] = { "%r8", "%r9", "%r10", "%r11" };
 static char *breg[4] = { "%r8b", "%r9b", "%r10b", "%r11b" };
+static char *cmplist[] = { "sete", "setne", "setl", "setg", "setle", "setge" };
+static char *invcmplist[] = { "jne", "je", "jle", "jge", "jl", "jg" };
+
 int free_reg[4] = { 0 };
+int label = 0;
+
+int get_label()
+{
+    return label++;
+}
+
+char *get_cmp(int op, char **from)
+{
+    if (op < AST_EQU || op > AST_LEQ) log(3, "invalid cmp, `%s`", tok_type_to_string(op));
+
+    switch (op)
+    {
+        case AST_EQU: return from[0];
+        case AST_NEQ: return from[1];
+        case AST_LT: return from[2];
+        case AST_GT: return from[3];
+        case AST_LEQ: return from[4];
+        case AST_GEQ: return from[5];
+        default: log(3, "%s", "no cmp found");
+    }
+
+    return NULL;
+}
 
 codegen_T *init_codegen(char *outfile)
 {
@@ -58,29 +85,55 @@ void postamble(FILE *outfile)
 void codegen_code(codegen_T *codegen, struct ASTnode *node)
 {
     preamble(codegen->outfile);
-    int reg = genAST(codegen, node, -1);
+    int reg = genAST(codegen, node, -1, 0);
     postamble(codegen->outfile);
     fclose(codegen->outfile);
 }
 
-int genAST(codegen_T *codegen, struct ASTnode *node, int reg)
+int genIF(codegen_T *codegen, struct ASTnode *node)
+{
+    int Lfalse, Lend;
+
+    Lfalse = get_label();
+    if (node->right) Lend = get_label();
+
+    genAST(codegen, node->left, Lfalse, node->op);
+    reg_freeall();
+
+    genAST(codegen, node->mid, -1, node->op);
+    reg_freeall();
+
+    if (node->right) asm_jump(codegen->outfile, Lend);
+    asm_label(codegen->outfile, Lfalse);
+
+    if (node->right) {
+        genAST(codegen, node->right, -1, node->op);
+        reg_freeall();
+        asm_label(codegen->outfile, Lend);
+    }
+
+    return -1;
+}
+
+int genAST(codegen_T *codegen, struct ASTnode *node, int reg, int parent_op)
 {
     int left, right;
 
     switch (node->op)
     {
+        case AST_IF: return genIF(codegen, node);
         case AST_GLUE: {
-                           genAST(codegen, node->left, -1);
+                           genAST(codegen, node->left, -1, node->op);
                            reg_freeall();
-                           genAST(codegen, node->right, -1);
+                           genAST(codegen, node->right, -1, node->op);
                            reg_freeall();
 
                            return -1;
                        }
     }
 
-    if (node->left) left = genAST(codegen, node->left, -1);
-    if (node->right) right = genAST(codegen, node->right, left);
+    if (node->left) left = genAST(codegen, node->left, -1, node->op);
+    if (node->right) right = genAST(codegen, node->right, left, node->op);
 
     switch (node->op)
     {
@@ -88,17 +141,23 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg)
         case AST_SUB: return asm_sub(codegen->outfile, left, right);
         case AST_MUL: return asm_mul(codegen->outfile, left, right);
         case AST_DIV: return asm_div(codegen->outfile, left, right);
-        case AST_EQU: return asm_equ(codegen->outfile, left, right);
-        case AST_NEQ: return asm_neq(codegen->outfile, left, right);
-        case AST_GT: return asm_gt(codegen->outfile, left, right);
-        case AST_LT: return asm_lt(codegen->outfile, left, right);
-        case AST_GEQ: return asm_geq(codegen->outfile, left, right);
-        case AST_LEQ: return asm_leq(codegen->outfile, left, right);
+
+        case AST_EQU:
+        case AST_NEQ:
+        case AST_GT:
+        case AST_LT:
+        case AST_GEQ:
+        case AST_LEQ:
+            {
+                if (parent_op == AST_IF) return asm_compare_jump(codegen->outfile, node->op, left, right, reg);
+                else return asm_compare_set(codegen->outfile, node->op, left, right);
+            }
+
         case AST_INTLIT: return asm_loadint(codegen->outfile, node->intvalue);
         case AST_IDENT: return asm_loadglob(codegen->outfile, symb_table_find(node->intvalue)->name);
         case AST_LVAL: return asm_storeglob(codegen->outfile, symb_table_find(node->intvalue)->name, reg);
         case AST_ASSIGN: return right;
-        case AST_PRINT: asm_printint(codegen->outfile, left); return -1;
+        case AST_PRINT: asm_printint(codegen->outfile, left); reg_freeall(); return -1;
         default: log(3, "%s", "Unrecognised ASTnode:Type");
     }
 
@@ -226,6 +285,35 @@ int asm_geq(FILE *outfile, int r1, int r2)
 int asm_leq(FILE *outfile, int r1, int r2)
 {
     return asm_compare(outfile, r1, r2, "setle");
+}
+
+int asm_compare_set(FILE *outfile, int op, int r1, int r2)
+{
+    fprintf(outfile, "\tcmpq\t%s, %s\n", reg[r2], reg[r1]);
+    fprintf(outfile, "\t%s\t%s\n", get_cmp(op, cmplist), breg[r2]);
+    fprintf(outfile, "\tmovzbq\t%s, %s\n", breg[r2], reg[r2]);
+    reg_free(r1);
+
+    return r2;
+}
+
+int asm_compare_jump(FILE *outfile, int op, int r1, int r2, int label)
+{
+    fprintf(outfile, "\tcmpq\t%s, %s\n", reg[r1], reg[r2]);
+    fprintf(outfile, "\t%s\tL%d\n", get_cmp(op, invcmplist), label);
+    reg_freeall();
+
+    return -1;
+}
+
+void asm_label(FILE *outfile, int label)
+{
+    fprintf(outfile, "L%d:\n", label);
+}
+
+void asm_jump(FILE *outfile, int label)
+{
+    fprintf(outfile, "\tjmp\tL%d\n", label);
 }
 
 void asm_genglob(FILE *outfile, char *sym)

@@ -21,6 +21,7 @@ enum
     AST_LVAL,
     AST_ASSIGN,
     AST_PRINT,
+    AST_IF,
     AST_GLUE
 };
 
@@ -28,6 +29,7 @@ struct ASTnode
 {
     int op;
     struct ASTnode *left;
+    struct ASTnode *mid;
     struct ASTnode *right;
     int intvalue;
 };
@@ -38,7 +40,7 @@ typedef struct PARSER_STRUCT
     struct token *token;
 } parser_T;
 
-struct ASTnode *init_ASTnode(int op, struct ASTnode *left, struct ASTnode *right, int intvalue);
+struct ASTnode *init_ASTnode(int op, struct ASTnode *left, struct ASTnode *mid, struct ASTnode *right, int intvalue);
 struct ASTnode *ASTnode_leaf(int op, int intvalue);
 struct ASTnode *ASTnode_unary(int op, struct ASTnode *left, int intvalue);
 int ASTnode_op(struct token *token);

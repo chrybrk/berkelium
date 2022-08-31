@@ -29,6 +29,8 @@ enum
 
   // keywords
   T_PRINT,
+  T_IF,
+  T_ELSE,
   // data types
   i32,
   i16
