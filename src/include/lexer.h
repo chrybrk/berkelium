@@ -10,6 +10,7 @@ enum
   T_MINUS,
   T_STAR,
   T_SLASH,
+  T_MODULO,
   T_LPAREN,
   T_RPAREN,
   T_LBRACE,

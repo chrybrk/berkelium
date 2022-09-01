@@ -1,6 +1,4 @@
-gcc src/*.c -Isrc/include -o ./bin/c/bk
-
-test_dir="./test/"
+test_dir="./program/"
 files=`ls $test_dir`
 
 for file in $files

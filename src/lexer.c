@@ -25,6 +25,7 @@ const char *tok_type_to_string(int token)
         case T_MINUS: return "T_MINUS";
         case T_STAR: return "T_STAR";
         case T_SLASH: return "T_SLASH";
+        case T_MODULO: return "T_MODULO";
         case T_LPAREN: return "T_LPAREN";
         case T_RPAREN: return "T_RPAREN";
         case T_LBRACE: return "T_LBRACE";
@@ -178,6 +179,7 @@ struct token *lexer_next_token(lexer_T *lexer)
             case '-': return lex_advance_current(lexer, T_MINUS);
             case '*': return lex_advance_current(lexer, T_STAR);
             case '/': return lex_advance_current(lexer, T_SLASH);
+            case '%': return lex_advance_current(lexer, T_MODULO);
             case ';': return lex_advance_current(lexer, T_SEMI);
             case '=': return lex_advance_twos(lexer, '=', T_EQU, T_ASSIGN);
             case '!': return lex_advance_twos(lexer, '=', T_NEQ, T_NOT);

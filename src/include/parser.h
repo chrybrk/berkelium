@@ -10,6 +10,7 @@ enum
     AST_SUB,
     AST_DIV,
     AST_MUL,
+    AST_MOD,
     AST_EQU,
     AST_NEQ,
     AST_GT,

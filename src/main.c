@@ -13,6 +13,7 @@
 int main(int argc, char *argv[])
 {
     int arg_r = 0;
+    int arg_a = 0;
 
     if ( argc < 2 ) log(3, "%s", "bk: no input file.");
 
@@ -39,6 +40,8 @@ int main(int argc, char *argv[])
             output_src = calloc(strlen(argv[i + 1]) + 8, sizeof(char));
             strcpy(output_src, argv[i + 1]);
         }
+
+        if (!strcmp(argv[i], "-a")) arg_a = 1;
 
         int val = !(strcmp(argv[i], "-r"));
         if (val) arg_r = 1;
@@ -99,6 +102,7 @@ int main(int argc, char *argv[])
     exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
     exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
     exec_sys("rm ./%s.o", output_src);
+    if (!arg_a) exec_sys("rm ./%s.s", output_src);
     if (arg_r) exec_sys("echo -e \"compiler output: $(./%s)\"", output_src);
 #endif
 

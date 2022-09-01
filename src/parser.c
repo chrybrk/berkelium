@@ -33,6 +33,7 @@ int ASTnode_op(struct token *token)
         case T_MINUS: return AST_SUB;
         case T_STAR: return AST_MUL;
         case T_SLASH: return AST_DIV;
+        case T_MODULO: return AST_MOD;
         case T_EQU: return AST_EQU;
         case T_NEQ: return AST_NEQ;
         case T_GT: return AST_GT;
@@ -56,6 +57,7 @@ int ASTnode_op_prec(struct token *token)
 
         case T_STAR:
         case T_SLASH:
+        case T_MODULO:
             return 20;
 
         case T_EQU:

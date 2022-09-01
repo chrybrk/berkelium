@@ -29,6 +29,7 @@ int asm_add(FILE *outfile, int r1, int r2);
 int asm_sub(FILE *outfile, int r1, int r2);
 int asm_mul(FILE *outfile, int r1, int r2);
 int asm_div(FILE *outfile, int r1, int r2);
+int asm_mod(FILE *outfile, int r1, int r2);
 
 int asm_equ(FILE *outfile, int r1, int r2);
 int asm_neq(FILE *outfile, int r1, int r2);

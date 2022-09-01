@@ -161,6 +161,7 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg, int parent_op)
         case AST_SUB: return asm_sub(codegen->outfile, left, right);
         case AST_MUL: return asm_mul(codegen->outfile, left, right);
         case AST_DIV: return asm_div(codegen->outfile, left, right);
+        case AST_MOD: return asm_mod(codegen->outfile, left, right);
 
         case AST_EQU:
         case AST_NEQ:
@@ -271,6 +272,18 @@ int asm_div(FILE *outfile, int r1, int r2)
     fprintf(outfile, "\tcqo\n");
     fprintf(outfile, "\tidivq\t%s\n", reg[r2]);
     fprintf(outfile, "\tmovq\t%%rax,%s\n", reg[r1]);
+
+    reg_free(r2);
+
+    return r1;
+}
+
+int asm_mod(FILE *outfile, int r1, int r2)
+{
+    fprintf(outfile, "\tmovq\t%s,%%rax\n", reg[r1]);
+    fprintf(outfile, "\tcltd\n");
+    fprintf(outfile, "\tidivq\t%s\n", reg[r2]);
+    fprintf(outfile, "\tmovsxd\t%%edx,%s\n", reg[r1]);
 
     reg_free(r2);
 
