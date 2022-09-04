@@ -1,0 +1,7 @@
+for (i32 node = 0; node < 10; node = node + 1)
+{
+    for (i32 next = 0; next < node; next = next + 1)
+    {
+        print(next);
+    }
+}

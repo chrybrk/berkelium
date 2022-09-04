@@ -1,4 +1,4 @@
-i32 year = 2000;
+i32 year = 1992;
 i32 div;
 
 div = year % 4;
@@ -19,7 +19,7 @@ if (div == 0)
     }
     else
     {
-        print(1);
+        print(0);
     }
 }
 else

@@ -24,6 +24,7 @@ enum
     AST_PRINT,
     AST_IF,
     AST_WHILE,
+    AST_FOR,
     AST_GLUE
 };
 
@@ -52,5 +53,6 @@ struct token *eat(parser_T *parser, int token);
 struct ASTnode *primary(parser_T *parser);
 struct ASTnode *parser_parse_expr(parser_T *parser, int tok_prec);
 struct ASTnode *parser_parse_assignment(parser_T *parser);
+struct ASTnode *parser_parse_statement(parser_T *parser);
 struct ASTnode *parser_parse_compound_statements(parser_T *parser);
 struct ASTnode *parser_parse(parser_T *parser);

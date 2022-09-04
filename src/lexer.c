@@ -3,7 +3,7 @@
 
 #include <ctype.h>
 
-static char *keyword[] = { "print", "if", "else", "while" };
+static char *keyword[] = { "print", "if", "else", "while", "for" };
 static char *data_type[] = { "i32", "i16" };
 
 struct token *init_token(int token, char *value, int ln, int clm)
@@ -44,6 +44,7 @@ const char *tok_type_to_string(int token)
         case T_IF: return "T_IF";
         case T_ELSE: return "T_ELSE";
         case T_WHILE: return "T_WHILE";
+        case T_FOR: return "T_FOR";
         case T_EOF: return "T_EOF";
         case i32: return "i32";
         case i16: return "i16";
@@ -246,6 +247,7 @@ int which_keyword(int loc)
         case 1: return T_IF;
         case 2: return T_ELSE;
         case 3: return T_WHILE;
+        case 4: return T_FOR;
     }
 
     return -1;

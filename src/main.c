@@ -10,6 +10,16 @@
 #include "include/interpret.h"
 #include "include/codegen.h"
 
+#define version "0.0.2"
+
+
+const char *help = "Usage: bk <file> <options>\n"
+             "Options:\n"
+             " -o Output path\n"
+             " -a Generate Assembly\n"
+             " -r Run\n"
+             " -v Version\n";
+
 int main(int argc, char *argv[])
 {
     int arg_r = 0;
@@ -17,35 +27,40 @@ int main(int argc, char *argv[])
 
     if ( argc < 2 ) log(3, "%s", "bk: no input file.");
 
-    char *fp = argv[1];
+    char *fp = NULL;
     char *file_extention = NULL;
     char *filename = NULL;
     char *output_src = NULL;
 
-    for( unsigned int i = 0; i < argc; i++ )
+    while (argc != 1)
     {
-        if (!strcmp(argv[i], "-h"))
+        argv++; argc--;
+
+        switch (*argv[0])
         {
-            char *template = "Usage: bk <file> <options>\n"
-                             "Options:\n"
-                             " -o Output path\n"
-                             " -l Generate Lexer\n"
-                             " -a Generate Assembly\n";
-            printf("%s", template);
+            case '-':
+            {
+                if ( argv[0][1] == 'v' ) fprintf(stdout, "version: %s\n", version);
+                else if ( argv[0][1] == 'h' ) fprintf(stdout, "%s\n", help);
+                else if ( argv[0][1] == 'a' ) arg_a = 1;
+                else if ( argv[0][1] == 'r' ) arg_r = 1;
+                else if ( argv[0][1] == 'o' )
+                {
+                    if (argc > 1)
+                    {
+                        argv++; argc--;
+                        if ( argv[0][0] == '-' ) log(3, "%s", "bk: seg fault, expected file after `-o`");
+                        output_src = argv[0];
+                    }
+                    else log(3, "%s", "bk: seg fault, expected file after `-o`");
+                }
+                break;
+            }
+            default: fp = argv[0];
         }
-
-        if (!strcmp(argv[i], "-o"))
-        {
-            if (argc == i + 1 || *argv[i + 1] == '-') log(3, "%s", "bk: cannot assign null to output path.");
-            output_src = calloc(strlen(argv[i + 1]) + 8, sizeof(char));
-            strcpy(output_src, argv[i + 1]);
-        }
-
-        if (!strcmp(argv[i], "-a")) arg_a = 1;
-
-        int val = !(strcmp(argv[i], "-r"));
-        if (val) arg_r = 1;
     }
+
+    if (fp == NULL) return 0;
 
     for (int i = strlen(fp) - 1; i >= 0; i--)
     {
@@ -91,7 +106,6 @@ int main(int argc, char *argv[])
 
     char *output_asm = calloc(strlen(output_src) + strlen(".s") + 8, sizeof(char));
     strcat(output_asm, output_src); strcat(output_asm, ".s");
-    // parser_parse_statements(parser, output_asm);
     struct ASTnode *node = parser_parse(parser);
     codegen_T *codegen = init_codegen(output_asm);
 
