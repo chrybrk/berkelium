@@ -1,22 +1,25 @@
-i32 even    = 0;
-i32 odd     = 0;
-
-i32 i = 0;
-while (i <= 69000)
+void main()
 {
-    i32 div = i % 2;
+    i32 even    = 0;
+    i32 odd     = 0;
 
-    if (div == 0)
+    i32 i = 0;
+    while (i <= 69000)
     {
-        even = even + 1;
-    }
-    else
-    {
-        odd = odd + 1;
+        i32 div = i % 2;
+
+        if (div == 0)
+        {
+            even = even + 1;
+        }
+        else
+        {
+            odd = odd + 1;
+        }
+
+        i = i + 1;
     }
 
-    i = i + 1;
+    print(even);
+    print(odd);
 }
-
-print(even);
-print(odd);

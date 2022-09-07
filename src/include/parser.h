@@ -25,12 +25,20 @@ enum
     AST_IF,
     AST_WHILE,
     AST_FOR,
-    AST_GLUE
+    AST_FUNCTION,
+    AST_GLUE,
+    AST_WIDE
+};
+
+enum
+{
+    P_nil, P_void, P_byte, P_i32
 };
 
 struct ASTnode
 {
     int op;
+    int type;
     struct ASTnode *left;
     struct ASTnode *mid;
     struct ASTnode *right;
@@ -43,9 +51,9 @@ typedef struct PARSER_STRUCT
     struct token *token;
 } parser_T;
 
-struct ASTnode *init_ASTnode(int op, struct ASTnode *left, struct ASTnode *mid, struct ASTnode *right, int intvalue);
-struct ASTnode *ASTnode_leaf(int op, int intvalue);
-struct ASTnode *ASTnode_unary(int op, struct ASTnode *left, int intvalue);
+struct ASTnode *init_ASTnode(int op, int type, struct ASTnode *left, struct ASTnode *mid, struct ASTnode *right, int intvalue);
+struct ASTnode *ASTnode_leaf(int op, int type, int intvalue);
+struct ASTnode *ASTnode_unary(int op, int type, struct ASTnode *left, int intvalue);
 int ASTnode_op(struct token *token);
 
 parser_T *init_parser(lexer_T *lexer);
@@ -56,3 +64,6 @@ struct ASTnode *parser_parse_assignment(parser_T *parser);
 struct ASTnode *parser_parse_statement(parser_T *parser);
 struct ASTnode *parser_parse_compound_statements(parser_T *parser);
 struct ASTnode *parser_parse(parser_T *parser);
+
+int get_prem_type(int type);
+int type_check(int *left, int *right, int onlyright);

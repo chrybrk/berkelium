@@ -2,11 +2,12 @@
 #include "include/macro.h"
 #include "include/codegen.h"
 
-struct ASTnode *init_ASTnode(int op, struct ASTnode *left, struct ASTnode *mid, struct ASTnode *right, int intvalue)
+struct ASTnode *init_ASTnode(int op, int type, struct ASTnode *left, struct ASTnode *mid, struct ASTnode *right, int intvalue)
 {
     struct ASTnode *new_ASTnode = calloc(1, sizeof(struct ASTnode));
 
     new_ASTnode->op = op;
+    new_ASTnode->type = type;
     new_ASTnode->left = left;
     new_ASTnode->mid = mid;
     new_ASTnode->right = right;
@@ -15,14 +16,14 @@ struct ASTnode *init_ASTnode(int op, struct ASTnode *left, struct ASTnode *mid, 
     return new_ASTnode;
 }
 
-struct ASTnode *ASTnode_leaf(int op, int intvalue)
+struct ASTnode *ASTnode_leaf(int op, int type, int intvalue)
 {
-    return (init_ASTnode(op, NULL, NULL, NULL, intvalue));
+    return (init_ASTnode(op, type, NULL, NULL, NULL, intvalue));
 }
 
-struct ASTnode *ASTnode_unary(int op, struct ASTnode *left, int intvalue)
+struct ASTnode *ASTnode_unary(int op, int type, struct ASTnode *left, int intvalue)
 {
-    return (init_ASTnode(op, left, NULL, NULL, intvalue));
+    return (init_ASTnode(op, type, left, NULL, NULL, intvalue));
 }
 
 int ASTnode_op(struct token *token)
@@ -92,7 +93,12 @@ struct ASTnode *primary(parser_T *parser)
     {
         case T_INTLIT:
             {
-                struct ASTnode *node = ASTnode_leaf(AST_INTLIT, atoi(parser->token->value));
+                int value = atoi(parser->token->value);
+                struct ASTnode *node;
+
+                if (value >= 0 && value <= 255) node = ASTnode_leaf(AST_INTLIT, P_byte, value);
+                node = ASTnode_leaf(AST_INTLIT, P_i32, value);
+
                 parser->token = lexer_next_token(parser->lexer);
 
                 return node;
@@ -105,7 +111,7 @@ struct ASTnode *primary(parser_T *parser)
                 {
                     log(3, "ln:%d:%d\n\tUndefined variable `%s`", parser->token->ln, parser->token->clm - 1, parser->token->value);
                 }
-                struct ASTnode *node = ASTnode_leaf(AST_IDENT, id);
+                struct ASTnode *node = ASTnode_leaf(AST_IDENT, symb_table_find(id)->type, id);
                 eat(parser, T_IDENT);
 
                 return node;
@@ -133,7 +139,16 @@ struct ASTnode *parser_parse_expr(parser_T *parser, int tok_prec)
         parser->token = lexer_next_token(parser->lexer);
 
         right = parser_parse_expr(parser, ASTnode_op_prec(tok));
-        left = init_ASTnode(ASTnode_op(tok), left, NULL, right, 0);
+
+        int leftype = left->type;
+        int rightype = right->type;
+
+        // if (!type_check(&leftype, &rightype, 0))
+            // log(3, "%s", "incompatible type.");
+        // if (leftype) left = ASTnode_unary(leftype, right->type, left, 0);
+        // if (rightype) right = ASTnode_unary(rightype, left->type, right, 0);
+
+        left = init_ASTnode(ASTnode_op(tok), left->type, left, NULL, right, 0);
 
         tok = parser->token;
         if (tok->token == T_SEMI || tok->token == T_RPAREN)
@@ -165,18 +180,18 @@ struct ASTnode *parser_parse_print(parser_T *parser)
     expected_tok(parser, T_LPAREN);
 
     tree = parser_parse_expr(parser, 0);
-    // int reg = genAST(codegen, tree, -1);
 
-    // asm_printint(codegen->outfile, reg);
     expected_tok(parser, T_RPAREN);
     expected_tok(parser, T_SEMI);
 
-    return ASTnode_unary(AST_PRINT, tree, 0);
+    return ASTnode_unary(AST_PRINT, P_nil, tree, 0);
 }
 
 struct ASTnode *parser_parse_variable_decl(parser_T *parser)
 {
-    eat(parser, i32);
+    int type = get_prem_type(eat(parser, parser->token->token)->token);
+
+    if (type == P_void) log(3, "ln:%d:%d\n\tInvalid variable type. `void`", parser->token->ln, parser->token->clm);
 
     int clm = parser->lexer->clm;
     int ln = parser->lexer->ln;
@@ -188,7 +203,7 @@ struct ASTnode *parser_parse_variable_decl(parser_T *parser)
     strcpy(ident, parser->token->value);
     eat(parser, T_IDENT);
 
-    create_symb_table(ident);
+    create_symb_table(ident, type, S_VARIABLE);
     // asm_genglob(codegen->outfile, ident);
 
     if (parser->token->token == T_SEMI)
@@ -215,14 +230,16 @@ struct ASTnode *parser_parse_assignment(parser_T *parser)
         log(3, "ln:%d:%d\n\tUndefined variable `%s`", parser->token->ln, parser->token->clm - 1, parser->token->value);
     }
 
-    right = ASTnode_leaf(AST_LVAL, id);
+    right = ASTnode_leaf(AST_LVAL, symb_table_find(id)->type, id);
     eat(parser, T_IDENT);
     expected_tok(parser, T_ASSIGN);
 
     left = parser_parse_expr(parser, 0);
-    tree = init_ASTnode(AST_ASSIGN, left, NULL, right, 0);
-    // genAST(codegen, tree, -1);
-    // reg_freeall();
+
+    // int leftype = left->type; int rightype = right->type;
+    // type_check(&leftype, &rightype, 1);
+    // if (leftype) left = ASTnode_unary(leftype, right->type, left, 0);
+    tree = init_ASTnode(AST_ASSIGN, symb_table_find(id)->type, left, NULL, right, 0);
 
     if (parser->token->token != T_RPAREN) expected_tok(parser, T_SEMI);
 
@@ -248,7 +265,7 @@ struct ASTnode *parser_parse_if(parser_T *parser)
     }
     else elseAST = NULL;
 
-    return init_ASTnode(AST_IF, condtionalAST, ifAST, elseAST, 0);
+    return init_ASTnode(AST_IF, P_nil, condtionalAST, ifAST, elseAST, 0);
 }
 
 struct ASTnode *parser_parse_while(parser_T *parser)
@@ -264,7 +281,7 @@ struct ASTnode *parser_parse_while(parser_T *parser)
 
     bodyAST = parser_parse_compound_statements(parser);
 
-    return init_ASTnode(AST_WHILE, condtionalAST, NULL, bodyAST, 0);
+    return init_ASTnode(AST_WHILE, P_nil, condtionalAST, NULL, bodyAST, 0);
 }
 
 struct ASTnode *parser_parse_for(parser_T *parser)
@@ -276,7 +293,6 @@ struct ASTnode *parser_parse_for(parser_T *parser)
     eat(parser, T_FOR);
     eat(parser, T_LPAREN);
 
-
     parser_parse_statement(parser);
     preopAST = parser_parse_statement(parser);
     condtionalAST = parser_parse_expr(parser, 0);
@@ -287,9 +303,30 @@ struct ASTnode *parser_parse_for(parser_T *parser)
 
     bodyAST = parser_parse_compound_statements(parser);
 
-    tree = init_ASTnode(AST_GLUE, bodyAST, NULL, postopAST, 0);
-    tree = init_ASTnode(AST_WHILE, condtionalAST, NULL, tree, 0);
-    return init_ASTnode(AST_GLUE, preopAST, NULL, tree, 0);
+    tree = init_ASTnode(AST_GLUE, P_nil, bodyAST, NULL, postopAST, 0);
+    tree = init_ASTnode(AST_WHILE, P_nil, condtionalAST, NULL, tree, 0);
+    return init_ASTnode(AST_GLUE, P_nil, preopAST, NULL, tree, 0);
+}
+
+struct ASTnode *parser_parse_decl(parser_T *parser)
+{
+    struct token *pk = token_peek(parser->lexer, 2);
+
+    if (pk->token == T_ASSIGN || pk->token == T_SEMI) return parser_parse_variable_decl(parser);
+
+    int type = get_prem_type(eat(parser, parser->token->token)->token);
+
+    char *ident = calloc(1, sizeof(strlen(parser->token->value)));
+    strcpy(ident, parser->token->value);
+    eat(parser, T_IDENT);
+
+    create_symb_table(ident, type, S_FUNCTION);
+    int slot = symb_table_get(ident);
+    eat(parser, T_LPAREN);
+    eat(parser, T_RPAREN);
+
+    struct ASTnode *tree = parser_parse_compound_statements(parser);
+    return ASTnode_unary(AST_FUNCTION, type, tree, slot);
 }
 
 struct ASTnode *parser_parse_statement(parser_T *parser)
@@ -302,7 +339,9 @@ struct ASTnode *parser_parse_statement(parser_T *parser)
         case T_IF: tree = parser_parse_if(parser); break;
         case T_WHILE: tree = parser_parse_while(parser); break;
         case T_FOR: tree = parser_parse_for(parser); break;
-        case i32: tree = parser_parse_variable_decl(parser); break;
+        case T_i32: tree = parser_parse_decl(parser); break;
+        case T_byte: tree = parser_parse_decl(parser); break;
+        case T_void: tree = parser_parse_decl(parser); break;
         case T_IDENT: tree = parser_parse_assignment(parser); break;
         default: tree = parser_parse_expr(parser, 0);
     }
@@ -329,7 +368,7 @@ struct ASTnode *parser_parse_compound_statements(parser_T *parser)
         if (tree)
         {
             if (left == NULL) left = tree;
-            else left = init_ASTnode(AST_GLUE, left, NULL, tree, 0);
+            else left = init_ASTnode(AST_GLUE, P_nil, left, NULL, tree, 0);
         }
     }
 
@@ -354,9 +393,53 @@ struct ASTnode *parser_parse(parser_T *parser)
         if (tree)
         {
             if (left == NULL) left = tree;
-            else left = init_ASTnode(AST_GLUE, left, NULL, tree, 0);
+            else left = init_ASTnode(AST_GLUE, P_nil, left, NULL, tree, 0);
         }
     }
 
     return left;
+}
+
+int get_prem_type(int type)
+{
+    switch (type)
+    {
+        case T_void: return P_void;
+        case T_i32: return P_i32;
+        case T_byte: return P_byte;
+        default: log(3, "%s", "Unrecognised data type.");
+    }
+
+    return -1;
+}
+
+int type_check(int *left, int *right, int onlyright)
+{
+    if ( *left == P_void || *right == P_void ) return 0;
+
+    if ( *left == *right )
+    {
+        *left = *right = 0;
+        return 1;
+    }
+
+    if ( *left == P_byte && *right == P_i32 )
+    {
+        *left = AST_WIDE;
+        *right = 0;
+        return 1;
+    }
+
+    if ( *left == P_i32 && *right == P_byte )
+    {
+        if (onlyright) return 0;
+
+        *left = 0;
+        *right = AST_WIDE;
+        return 1;
+    }
+
+    *left = *right = 0;
+
+    return 1;
 }

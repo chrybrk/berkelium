@@ -4,7 +4,7 @@
 #include <ctype.h>
 
 static char *keyword[] = { "print", "if", "else", "while", "for" };
-static char *data_type[] = { "i32", "i16" };
+static char *data_type[] = { "i32", "void", "byte" };
 
 struct token *init_token(int token, char *value, int ln, int clm)
 {
@@ -46,8 +46,9 @@ const char *tok_type_to_string(int token)
         case T_WHILE: return "T_WHILE";
         case T_FOR: return "T_FOR";
         case T_EOF: return "T_EOF";
-        case i32: return "i32";
-        case i16: return "i16";
+        case T_i32: return "T_i32";
+        case T_void: return "T_void";
+        case T_byte: return "T_byte";
         default: return "unknown token";
     }
 }
@@ -198,6 +199,28 @@ struct token *lexer_next_token(lexer_T *lexer)
     return init_token(T_EOF, NULL, lexer->ln, lexer->clm - 1);
 }
 
+struct token *token_peek(lexer_T *lexer, int offset)
+{
+    int save_clm = lexer->clm;
+    int save_ln = lexer->ln;
+    int save_i = lexer->i;
+    int save_c = lexer->c;
+
+    struct token *tok;
+
+    for (int i = 0; i < offset; i++)
+    {
+        tok = lexer_next_token(lexer);
+    }
+
+    lexer->clm = save_clm;
+    lexer->ln = save_ln;
+    lexer->i = save_i;
+    lexer->c = save_c;
+
+    return tok;
+}
+
 void token_print(lexer_T *lexer)
 {
     char old_char = lexer->c;
@@ -257,7 +280,9 @@ int which_data_type(int loc)
 {
     switch(loc)
     {
-        case 0: return i32;
+        case 0: return T_i32;
+        case 1: return T_void;
+        case 2: return T_byte;
     }
 
     return -1;

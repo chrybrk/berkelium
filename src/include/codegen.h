@@ -43,6 +43,9 @@ void asm_label(FILE *outfile, int label);
 void asm_jump(FILE *outfile, int label);
 void asm_genglob(FILE *outfile, char *sym);
 int asm_compare(FILE *outfile, int r1, int r2, char *cond);
+void asm_function_preamble(FILE *outfile, char *name);
+void asm_function_postamble(FILE *outfile, int r);
 
 // function
 void asm_printint(FILE *outfile, int r);
+int asm_wide(int r, int o, int n);

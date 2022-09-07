@@ -1,0 +1,10 @@
+void main()
+{
+    i32 a = 4000;
+    byte b = a;
+    i32 c = b;
+
+    print(a);
+    print(b);
+    print(c);
+}

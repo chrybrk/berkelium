@@ -21,35 +21,39 @@ printint:
 main:
 	pushq	%rbp
 	movq	%rsp, %rbp
+	movq	$69000, %r8
+	.comm	term,8,8
+	movq	%r8, term(%rip)
 	movq	$0, %r8
-	.comm	node,8,8
-	movq	%r8, node(%rip)
+	.comm	first,8,8
+	movq	%r8, first(%rip)
+	movq	$1, %r8
+	.comm	second,8,8
+	movq	%r8, second(%rip)
+	movq	$0, %r8
+	.comm	i,8,8
+	movq	%r8, i(%rip)
 L0:
-	movq	node(%rip), %r8
-	movq	$10, %r9
+	movq	i(%rip), %r8
+	movq	term(%rip), %r9
 	cmpq	%r8, %r9
-	jle	L1
-	movq	$0, %r8
-	.comm	next,8,8
-	movq	%r8, next(%rip)
-L2:
-	movq	next(%rip), %r8
-	movq	node(%rip), %r9
-	cmpq	%r8, %r9
-	jle	L3
-	movq	next(%rip), %r8
+	jl	L1
+	movq	first(%rip), %r8
 	movq	%r8, %rdi
 	call	printint
-	movq	next(%rip), %r8
-	movq	$1, %r9
+	movq	first(%rip), %r8
+	movq	second(%rip), %r9
 	addq	%r8, %r9
+	.comm	next,8,8
 	movq	%r9, next(%rip)
-	jmp	L2
-L3:
-	movq	node(%rip), %r8
+	movq	second(%rip), %r8
+	movq	%r8, first(%rip)
+	movq	next(%rip), %r8
+	movq	%r8, second(%rip)
+	movq	i(%rip), %r8
 	movq	$1, %r9
 	addq	%r8, %r9
-	movq	%r9, node(%rip)
+	movq	%r9, i(%rip)
 	jmp	L0
 L1:
 	movl	$0, %eax

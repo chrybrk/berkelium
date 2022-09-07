@@ -1,28 +1,31 @@
-i32 year = 1992;
-i32 div;
-
-div = year % 4;
-if (div == 0)
+void main()
 {
-    div = year % 100;
+    i32 year = 1992;
+    i32 div;
+
+    div = year % 4;
     if (div == 0)
     {
-        div = year % 400;
+        div = year % 100;
         if (div == 0)
         {
-            print(0);
+            div = year % 400;
+            if (div == 0)
+            {
+                print(0);
+            }
+            else
+            {
+                print(1);
+            }
         }
         else
         {
-            print(1);
+            print(0);
         }
     }
     else
     {
-        print(0);
+        print(1);
     }
-}
-else
-{
-    print(1);
 }

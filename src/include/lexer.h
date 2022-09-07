@@ -35,8 +35,9 @@ enum
   T_WHILE,
   T_FOR,
   // data types
-  i32,
-  i16
+  T_i32,
+  T_void,
+  T_byte
 };
 
 struct token
@@ -64,6 +65,7 @@ char *tok_string(struct token *token);
 lexer_T *init_lexer(char *src);
 void lexer_advance(lexer_T *lexer);
 struct token *lexer_next_token(lexer_T *lexer);
+struct token *token_peek(lexer_T *lexer, int offset);
 
 void token_print(lexer_T* lexer);
 int is_keyword(char *s);

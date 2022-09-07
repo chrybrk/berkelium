@@ -113,11 +113,14 @@ int main(int argc, char *argv[])
 
 #ifdef if_execute_debug
     codegen_code(codegen, node);
-    exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
-    exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
-    exec_sys("rm ./%s.o", output_src);
-    if (!arg_a) exec_sys("rm ./%s.s", output_src);
-    if (arg_r) exec_sys("echo -e \"compiler output: $(./%s)\"", output_src);
+    if (!arg_a)
+    {
+        exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
+        exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
+        exec_sys("rm ./%s.o", output_src);
+        exec_sys("rm ./%s.s", output_src);
+    }
+    if (arg_r) exec_sys("echo -e \"$(./%s)\"", output_src);
 #endif
 
     return 0;

@@ -1,0 +1,17 @@
+void main()
+{
+    i32 number = 153;
+    i32 temp = number;
+
+    i32 sum = 0;
+
+    while (number != 0)
+    {
+        i32 last_digit = number % 10;
+        i32 power = last_digit * last_digit * last_digit;
+        sum = sum + power;
+        number = number / 10;
+    }
+
+    print(sum == temp);
+}
