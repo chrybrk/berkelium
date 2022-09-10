@@ -1,0 +1,32 @@
+i32 test()
+{
+    return 4000;
+}
+
+void main()
+{
+    byte a = 10;
+    i16 b = 20;
+    i32 c = 30;
+    i64 d = 40;
+
+    byte result_0 = test(a);
+    i16 result_1 = test(a);
+    i32 result_2 = test(a);
+    i64 result_3 = test(a);
+
+    byte result_4 = test(b);
+    i16 result_5 = test(b);
+    i32 result_6 = test(b);
+    i64 result_7 = test(b);
+
+    byte result_8 = test(c);
+    i16 result_9 = test(c);
+    i32 result_10 = test(c);
+    i64 result_11 = test(c);
+
+    byte result_12 = test(d);
+    i16 result_13 = test(d);
+    i32 result_14 = test(d);
+    i64 result_15 = test(d);
+}

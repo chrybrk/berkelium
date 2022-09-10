@@ -1,8 +1,6 @@
 project_name="bk"
 project_bin_dir="./bin/c/"
 project_run_command="./bin/c/bk $1 -o ./bin/bk/main -r"
-project_run_command2="./bin/c/bk $1 -o ./bin/bk/main -a"
-
 
 compile_info="project"
 
@@ -11,7 +9,6 @@ if [[ $compile_info -eq "project" ]]; then
     gcc src/*.c -Isrc/include -o $project_bin_dir$project_name
     if [[ $? -eq 0 ]]; then
         $project_run_command
-        $project_run_command2
     else
         echo "program failed to compile, exited($?)"
     fi

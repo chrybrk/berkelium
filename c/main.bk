@@ -1,0 +1,6 @@
+i32 main()
+{
+    printi(10);
+
+    return 0;
+}

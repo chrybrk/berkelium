@@ -4,6 +4,8 @@
 
 static char *reg[4] = { "%r8", "%r9", "%r10", "%r11" };
 static char *breg[4] = { "%r8b", "%r9b", "%r10b", "%r11b" };
+static char *wreg[4] = { "%r8w", "%r9w", "%r10w", "%r11w" };
+static char *dreg[4] = { "%r8d", "%r9d", "%r10d", "%r11d" };
 static char *x64greg[4] = { "%rax", "%rbx", "%rcx", "%rdx" };
 static char *cmplist[] = { "setne", "sete", "setl", "setg", "setle", "setge" };
 static char *invcmplist[] = { "jne", "je", "jle", "jge", "jl", "jg" };
@@ -14,6 +16,18 @@ int label = 0;
 int get_label()
 {
     return label++;
+}
+
+char *mov_typesize(int type)
+{
+    switch (type)
+    {
+        case P_byte: return "movzbq";
+        case P_i16: return "movzbl";
+        case P_i32: return "movzbl";
+        case P_i64: return "movq";
+        default: return "invalid_size";
+    }
 }
 
 char *get_cmp(int op, char **from)
@@ -140,7 +154,7 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg, int parent_op)
                         {
                             asm_function_preamble(codegen->outfile, symb_table_find(node->intvalue)->name);
                             int r = genAST(codegen, node->left, -1, node->op);
-                            asm_function_postamble(codegen->outfile, reg);
+                            asm_function_postamble(codegen->outfile, node->intvalue);
                             return -1;
                         }
         case AST_IF: return genIF(codegen, node);
@@ -183,6 +197,8 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg, int parent_op)
         case AST_ASSIGN: return right;
         case AST_PRINT: asm_printint(codegen->outfile, left); reg_freeall(); return -1;
         case AST_WIDE: return asm_wide(left, node->left->type, node->type);
+        case AST_RETURN: asm_return(codegen->outfile, left, node->intvalue); return -1;
+        case AST_FUNCTION_CALL: return asm_call(codegen->outfile, left, node->intvalue);
         default: log(3, "%s", "Unrecognised ASTnode:Type");
     }
 
@@ -235,8 +251,29 @@ int asm_loadglob(FILE *outfile, char *value)
     int r = reg_alloc();
 
     int id = symb_table_get(value);
-    if (symb_table_find(id)->type == P_i32) fprintf(outfile, "\tmovq\t%s(\%%rip), %s\n", value, reg[r]);
-    else if (symb_table_find(id)->type == P_byte) fprintf(outfile, "\tmovzbq\t%s(\%%rip), %s\n", value, reg[r]);
+    int type = symb_table_find(id)->type;
+    char *typesize = mov_typesize(type);
+
+    switch (symb_table_find(id)->type)
+    {
+        case P_byte:
+            fprintf(outfile, "\tmovzbq\t%s(\%%rip), %s\n", value, reg[r]);
+            break;
+
+        case P_i16:
+            fprintf(outfile, "\tmovzbq\t%s(\%%rip), %s\n", value, reg[r]);
+            break;
+
+        case P_i32:
+            fprintf(outfile, "\tmovzbl\t%s(\%%rip), %s\n", value, dreg[r]);
+            break;
+
+        case P_i64:
+            fprintf(outfile, "\tmovq\t%s(\%%rip), %s\n", value, reg[r]);
+            break;
+        
+        default: log(3, "%s", "invalid size.");
+    }
 
     return r;
 }
@@ -247,8 +284,28 @@ int asm_storeglob(FILE *outfile, char *name, int r)
     if (idx == 0) asm_genglob(outfile, name);
 
     int id = symb_table_get(name);
-    if (symb_table_find(id)->type == P_i32) fprintf(outfile, "\tmovq\t%s, %s(\%%rip)\n", reg[r], name);
-    else if (symb_table_find(id)->type == P_byte) fprintf(outfile, "\tmovb\t%s, %s(\%%rip)\n", breg[r], name);
+
+    switch (symb_table_find(id)->type)
+    {
+        case P_byte:
+            fprintf(outfile, "\tmovb\t%s, %s(\%%rip)\n", breg[r], name);
+            break;
+
+        case P_i16:
+            fprintf(outfile, "\tmovw\t%s, %s(\%%rip)\n", wreg[r], name);
+            break;
+
+        case P_i32:
+            fprintf(outfile, "\tmovl\t%s, %s(\%%rip)\n", dreg[r], name);
+            break;
+
+        case P_i64:
+            fprintf(outfile, "\tmovq\t%s, %s(\%%rip)\n", reg[r], name);
+            break;
+        
+        default: log(3, "%s", "invalid size.");
+    }
+
 
     return r;
 }
@@ -363,8 +420,8 @@ void asm_function_preamble(FILE *outfile, char *name)
 
 void asm_function_postamble(FILE *outfile, int r)
 {
-    char *template_postamble = "\tmovl\t$0, %eax\n"
-                               "\tpopq\t%rbp\n"
+    asm_label(outfile, r);
+    char *template_postamble = "\tpopq\t%rbp\n"
                                "\tret\n";
     fputs(template_postamble, outfile);
 }
@@ -382,9 +439,10 @@ void asm_jump(FILE *outfile, int label)
 void asm_genglob(FILE *outfile, char *sym)
 {
     int id = symb_table_get(sym);
+    int type = symb_table_find(id)->type;
+    int size = get_prem_size(type);
 
-    if (symb_table_find(id)->type == P_i32) fprintf(outfile, "\t.comm\t%s,8,8\n", sym);
-    else if (symb_table_find(id)->type == P_byte) fprintf(outfile, "\t.comm\t%s,1,1\n", sym);
+    fprintf(outfile, "\t.comm\t%s,%d,%d\n", sym, size, size);
 }
 
 int asm_compare(FILE *outfile, int r1, int r2, char *cond)
@@ -394,6 +452,42 @@ int asm_compare(FILE *outfile, int r1, int r2, char *cond)
     fprintf(outfile, "\tandq\t$255,%s\n", reg[r2]);
     reg_free(r1);
     return r2;
+}
+
+void asm_return(FILE *outfile, int r, int id)
+{
+    switch (symb_table_find(id)->type)
+    {
+        case P_byte:
+            fprintf(outfile, "\tmovzbl\t%s, %%eax\n", breg[r]);
+            break;
+
+        case P_i16:
+            fprintf(outfile, "\tmovzbq\t%s, %%eax\n",  wreg[r]);
+            break;
+
+        case P_i32:
+            fprintf(outfile, "\tmovl\t%s, %%eax\n", dreg[r]);
+            break;
+
+        case P_i64:
+            fprintf(outfile, "\tmovq\t%s, %%rax\n", reg[r]);
+            break;
+        
+        default: log(3, "%s", "invalid size.");
+    }
+
+    asm_jump(outfile, symb_table_get_label(id));
+}
+
+int asm_call(FILE *outfile, int r, int id)
+{
+    int outr = reg_alloc();
+    fprintf(outfile, "\tmovq\t%s, %%rdi\n", reg[r]);
+    fprintf(outfile, "\tcall\t%s\n", symb_table_find(id)->name);
+    fprintf(outfile, "\tmovq\t%%rax, %s\n", reg[outr]);
+    reg_free(r);
+    return (outr);
 }
 
 // function

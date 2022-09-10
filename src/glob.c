@@ -3,13 +3,14 @@
 
 #include <string.h>
 
-void create_symb_table(char *name, int type, int stype)
+void create_symb_table(char *name, int type, int stype, int label)
 {
     symb_table_T *new_symb = calloc(1, sizeof(struct SYMB_TABLE_STRUCT));
 
     new_symb->name = name;
     new_symb->type = type;
     new_symb->stype = stype;
+    new_symb->label = label;
 
     if (glob_pos < GLOB_SIZE)
     {
@@ -62,6 +63,11 @@ int symb_table_get_type(char *name)
 int symb_table_get_stype(char *name)
 {
     return symb_table_find(symb_table_get(name))->stype;
+}
+
+int symb_table_get_label(int index)
+{
+    return symb_table_find(index)->label;
 }
 
 symb_table_T *symb_table_find(int index)

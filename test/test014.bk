@@ -4,7 +4,12 @@ void main()
     byte b = a;
     i32 c = b;
 
+    i32 loss = a - c;
+    i32 total = loss + c;
+
     print(a);
     print(b);
     print(c);
+    print(loss);
+    print(total);
 }

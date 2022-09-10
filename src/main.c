@@ -11,6 +11,7 @@
 #include "include/codegen.h"
 
 #define version "0.0.2"
+#define debug
 
 
 const char *help = "Usage: bk <file> <options>\n"
@@ -118,9 +119,12 @@ int main(int argc, char *argv[])
         exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
         exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
         exec_sys("rm ./%s.o", output_src);
-        exec_sys("rm ./%s.s", output_src);
     }
     if (arg_r) exec_sys("echo -e \"$(./%s)\"", output_src);
+#endif
+
+#ifndef debug
+        exec_sys("rm ./%s.s", output_src);
 #endif
 
     return 0;

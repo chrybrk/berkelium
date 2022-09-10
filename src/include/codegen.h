@@ -8,6 +8,8 @@ typedef struct CODEGEN_STRUCT
     FILE *outfile;
 } codegen_T;
 
+int get_label();
+
 codegen_T *init_codegen(char *outfile);
 void codegen_code(codegen_T *codegen, struct ASTnode *node);
 int genIF(codegen_T *codegen, struct ASTnode *node);
@@ -45,6 +47,8 @@ void asm_genglob(FILE *outfile, char *sym);
 int asm_compare(FILE *outfile, int r1, int r2, char *cond);
 void asm_function_preamble(FILE *outfile, char *name);
 void asm_function_postamble(FILE *outfile, int r);
+void asm_return(FILE *outfile, int r, int id);
+int asm_call(FILE *outfile, int r, int id);
 
 // function
 void asm_printint(FILE *outfile, int r);

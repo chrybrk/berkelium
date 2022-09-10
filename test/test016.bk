@@ -1,0 +1,11 @@
+i32 test()
+{
+    return 400;
+}
+
+i32 main()
+{
+    print(10);
+    print(test(1) + 400);
+    return 0;
+}

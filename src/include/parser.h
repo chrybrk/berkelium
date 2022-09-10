@@ -26,13 +26,15 @@ enum
     AST_WHILE,
     AST_FOR,
     AST_FUNCTION,
+    AST_FUNCTION_CALL,
+    AST_RETURN,
     AST_GLUE,
     AST_WIDE
 };
 
 enum
 {
-    P_nil, P_void, P_byte, P_i32
+    P_nil, P_void, P_byte, P_i16, P_i32, P_i64
 };
 
 struct ASTnode
@@ -62,8 +64,11 @@ struct ASTnode *primary(parser_T *parser);
 struct ASTnode *parser_parse_expr(parser_T *parser, int tok_prec);
 struct ASTnode *parser_parse_assignment(parser_T *parser);
 struct ASTnode *parser_parse_statement(parser_T *parser);
+struct ASTnode *parser_parse_call(parser_T *parser);
 struct ASTnode *parser_parse_compound_statements(parser_T *parser);
 struct ASTnode *parser_parse(parser_T *parser);
 
 int get_prem_type(int type);
-int type_check(int *left, int *right, int onlyright);
+int get_prem_size(int type);
+char *get_prem_size_str(int size);
+int type_check(int left, int right);

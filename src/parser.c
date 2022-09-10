@@ -96,7 +96,7 @@ struct ASTnode *primary(parser_T *parser)
                 int value = atoi(parser->token->value);
                 struct ASTnode *node;
 
-                if (value >= 0 && value <= 255) node = ASTnode_leaf(AST_INTLIT, P_byte, value);
+                // if (value >= 0 && value <= 255) node = ASTnode_leaf(AST_INTLIT, P_byte, value);
                 node = ASTnode_leaf(AST_INTLIT, P_i32, value);
 
                 parser->token = lexer_next_token(parser->lexer);
@@ -106,6 +106,7 @@ struct ASTnode *primary(parser_T *parser)
         case T_IDENT:
             {
                 int id = symb_table_get(parser->token->value);
+                if (symb_table_find(id)->stype == S_FUNCTION) return parser_parse_call(parser);
 
                 if (id == -1)
                 {
@@ -191,7 +192,7 @@ struct ASTnode *parser_parse_variable_decl(parser_T *parser)
 {
     int type = get_prem_type(eat(parser, parser->token->token)->token);
 
-    if (type == P_void) log(3, "ln:%d:%d\n\tInvalid variable type. `void`", parser->token->ln, parser->token->clm);
+    if (type == P_void) log(3, "%s\n", "invalid variable type `void`");
 
     int clm = parser->lexer->clm;
     int ln = parser->lexer->ln;
@@ -203,7 +204,7 @@ struct ASTnode *parser_parse_variable_decl(parser_T *parser)
     strcpy(ident, parser->token->value);
     eat(parser, T_IDENT);
 
-    create_symb_table(ident, type, S_VARIABLE);
+    create_symb_table(ident, type, S_VARIABLE, 0);
     // asm_genglob(codegen->outfile, ident);
 
     if (parser->token->token == T_SEMI)
@@ -236,8 +237,8 @@ struct ASTnode *parser_parse_assignment(parser_T *parser)
 
     left = parser_parse_expr(parser, 0);
 
-    // int leftype = left->type; int rightype = right->type;
-    // type_check(&leftype, &rightype, 1);
+    int leftype = left->type; int rightype = right->type;
+    type_check(leftype, rightype);
     // if (leftype) left = ASTnode_unary(leftype, right->type, left, 0);
     tree = init_ASTnode(AST_ASSIGN, symb_table_find(id)->type, left, NULL, right, 0);
 
@@ -320,13 +321,57 @@ struct ASTnode *parser_parse_decl(parser_T *parser)
     strcpy(ident, parser->token->value);
     eat(parser, T_IDENT);
 
-    create_symb_table(ident, type, S_FUNCTION);
+    create_symb_table(ident, type, S_FUNCTION, get_label());
     int slot = symb_table_get(ident);
+    current_function_call = slot;
     eat(parser, T_LPAREN);
     eat(parser, T_RPAREN);
 
     struct ASTnode *tree = parser_parse_compound_statements(parser);
+    struct ASTnode *last;
+
+    if (type != P_void)
+    {
+        last = (tree->op == AST_GLUE) ? tree->right : tree;
+        if (last == NULL || last->op != AST_RETURN) log(3, "%s", "Non-void returns a valid value.");
+    }
+
     return ASTnode_unary(AST_FUNCTION, type, tree, slot);
+}
+
+struct ASTnode *parser_parse_call(parser_T *parser)
+{
+    struct token *pk = token_peek(parser->lexer, 1);
+    if (pk->token == T_ASSIGN) return parser_parse_assignment(parser);
+
+    struct ASTnode *tree;
+    int id = symb_table_get(parser->token->value);
+    if (id != -1) { if (symb_table_find(id)->stype != S_FUNCTION) log(3, "Undefined function `%s`.", parser->token->value); }
+    else log(3, "Undefined symbol `%s`.", parser->token->value);
+
+    eat(parser, T_IDENT);
+
+    eat(parser, T_LPAREN);
+    tree = parser_parse_expr(parser, 0);
+    tree = ASTnode_unary(AST_FUNCTION_CALL, symb_table_find(id)->type, tree, id);
+    eat(parser, T_RPAREN);
+
+    return tree;
+}
+
+struct ASTnode *parser_parse_return(parser_T *parser)
+{
+    if (symb_table_find(current_function_call)->type == P_void) log(3, "%s", "void function cannot return.");
+    struct ASTnode *tree;
+
+    eat(parser, T_RETURN);
+    tree = parser_parse_expr(parser, 0);
+
+    if (tree->type != symb_table_find(current_function_call)->type) log(3, "%s", "function return type don't match.");
+    tree = ASTnode_unary(AST_RETURN, P_nil, tree, current_function_call);
+    eat(parser, T_SEMI);
+
+    return tree;
 }
 
 struct ASTnode *parser_parse_statement(parser_T *parser)
@@ -339,10 +384,13 @@ struct ASTnode *parser_parse_statement(parser_T *parser)
         case T_IF: tree = parser_parse_if(parser); break;
         case T_WHILE: tree = parser_parse_while(parser); break;
         case T_FOR: tree = parser_parse_for(parser); break;
-        case T_i32: tree = parser_parse_decl(parser); break;
+        case T_RETURN: tree = parser_parse_return(parser); break;
         case T_byte: tree = parser_parse_decl(parser); break;
+        case T_i16: tree = parser_parse_decl(parser); break;
+        case T_i32: tree = parser_parse_decl(parser); break;
+        case T_i64: tree = parser_parse_decl(parser); break;
         case T_void: tree = parser_parse_decl(parser); break;
-        case T_IDENT: tree = parser_parse_assignment(parser); break;
+        case T_IDENT: tree = parser_parse_call(parser); break;
         default: tree = parser_parse_expr(parser, 0);
     }
 
@@ -405,41 +453,52 @@ int get_prem_type(int type)
     switch (type)
     {
         case T_void: return P_void;
-        case T_i32: return P_i32;
         case T_byte: return P_byte;
+        case T_i16:return P_i16;
+        case T_i32: return P_i32;
+        case T_i64: return P_i64;
         default: log(3, "%s", "Unrecognised data type.");
     }
 
     return -1;
 }
 
-int type_check(int *left, int *right, int onlyright)
+int get_prem_size(int type)
 {
-    if ( *left == P_void || *right == P_void ) return 0;
-
-    if ( *left == *right )
+    switch(type)
     {
-        *left = *right = 0;
-        return 1;
+        case P_void: return 0;
+        case P_byte: return 1;
+        case P_i16: return 2;
+        case P_i32: return 4;
+        case P_i64: return 8;
+        default: return 0;
     }
+}
 
-    if ( *left == P_byte && *right == P_i32 )
+char *get_prem_size_str(int size)
+{
+    switch (size)
     {
-        *left = AST_WIDE;
-        *right = 0;
-        return 1;
+        case 1: return "byte";
+        case 2: return "i16";
+        case 4: return "i32";
+        case 8: return "i64";
+        default: return "invalid size.";
     }
+}
 
-    if ( *left == P_i32 && *right == P_byte )
-    {
-        if (onlyright) return 0;
+int type_check(int left, int right)
+{
+    if (left == right) return 0;
 
-        *left = 0;
-        *right = AST_WIDE;
-        return 1;
-    }
+    int left_size = get_prem_size(left);
+    int right_size = get_prem_size(right);
 
-    *left = *right = 0;
+    if (left_size == 0 || right_size == 0) return 1;
 
-    return 1;
+    if (left_size < right_size) log(2, "`%s` size is smaller than `%s`.", get_prem_size_str(left_size), get_prem_size_str(right_size));
+    if (left_size > right_size) log(2, "`%s` size is smaller than `%s`.", get_prem_size_str(right_size), get_prem_size_str(left_size));
+
+    return 0;
 }

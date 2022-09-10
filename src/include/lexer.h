@@ -34,9 +34,12 @@ enum
   T_ELSE,
   T_WHILE,
   T_FOR,
+  T_RETURN,
   // data types
-  T_i32,
   T_void,
+  T_i16,
+  T_i32,
+  T_i64,
   T_byte
 };
 
