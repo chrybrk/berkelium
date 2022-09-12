@@ -29,6 +29,7 @@ enum
     AST_FUNCTION_CALL,
     AST_RETURN,
     AST_GLUE,
+    AST_NOOP,
     AST_WIDE
 };
 

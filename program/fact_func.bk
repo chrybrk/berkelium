@@ -1,0 +1,23 @@
+i32 fact()
+{
+    i32 number = 5;
+    i32 result = 1;
+
+    for (i32 i = 1; i <= number; i = i + 1)
+    {
+        result = result * i;
+    }
+
+    return result;
+}
+
+i32 main()
+{
+    i32 fact5 = fact(5);
+    print(fact5);
+
+    i64 fact10 = 12873 * fact5;
+    print(fact10);
+
+    return 0;
+}

@@ -1,6 +1,6 @@
 project_name="bk"
 project_bin_dir="./bin/c/"
-project_run_command="./bin/c/bk $1 -o ./bin/bk/main -r"
+project_run_command="./bin/c/bk $1 -o ./bin/bk/main -r -a"
 
 compile_info="project"
 

@@ -1,0 +1,20 @@
+i32 main()
+{
+    byte a;
+    a = 255;
+    print(a);
+
+    i16 b;
+    b = 65535;
+    print(b);
+
+    i32 c;
+    c = 2147483647;
+    print(c);
+
+    i64 d;
+    d = 2147483647;
+    print(d);
+
+    return 0;
+}

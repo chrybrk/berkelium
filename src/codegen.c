@@ -150,6 +150,7 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg, int parent_op)
 
     switch (node->op)
     {
+        case AST_NOOP: return -1;
         case AST_FUNCTION:
                         {
                             asm_function_preamble(codegen->outfile, symb_table_find(node->intvalue)->name);
@@ -261,11 +262,11 @@ int asm_loadglob(FILE *outfile, char *value)
             break;
 
         case P_i16:
-            fprintf(outfile, "\tmovzbq\t%s(\%%rip), %s\n", value, reg[r]);
+            fprintf(outfile, "\tmovzwq\t%s(\%%rip), %s\n", value, reg[r]);
             break;
 
         case P_i32:
-            fprintf(outfile, "\tmovzbl\t%s(\%%rip), %s\n", value, dreg[r]);
+            fprintf(outfile, "\tmovslq\t%s(\%%rip), %s\n", value, reg[r]);
             break;
 
         case P_i64:
@@ -420,7 +421,7 @@ void asm_function_preamble(FILE *outfile, char *name)
 
 void asm_function_postamble(FILE *outfile, int r)
 {
-    asm_label(outfile, r);
+    // asm_label(outfile, r);
     char *template_postamble = "\tpopq\t%rbp\n"
                                "\tret\n";
     fputs(template_postamble, outfile);
@@ -467,7 +468,7 @@ void asm_return(FILE *outfile, int r, int id)
             break;
 
         case P_i32:
-            fprintf(outfile, "\tmovl\t%s, %%eax\n", dreg[r]);
+            fprintf(outfile, "\tmovq\t%s, %%rax\n", reg[r]);
             break;
 
         case P_i64:
@@ -477,7 +478,7 @@ void asm_return(FILE *outfile, int r, int id)
         default: log(3, "%s", "invalid size.");
     }
 
-    asm_jump(outfile, symb_table_get_label(id));
+    // asm_jump(outfile, symb_table_get_label(id));
 }
 
 int asm_call(FILE *outfile, int r, int id)

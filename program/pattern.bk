@@ -1,0 +1,13 @@
+i32 main()
+{
+    for (i32 i = 10; i > 0; i = i - 1)
+    {
+        for (i32 j = 0; j < i; j = j + 1)
+        {
+            print_i32(j);
+        }
+        ln(0);
+    }
+
+    return 0;
+}

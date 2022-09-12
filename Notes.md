@@ -8,5 +8,6 @@ I was tryin' to implement `type_check` but it just wouldn't work for some reason
 # TODO
 
 - [ ] Type Check
-- [ ] `return` keyword
+- [x] For-Loop empty seg fault
+- [x] `return` keyword
 - [ ] call native functions

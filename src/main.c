@@ -19,12 +19,14 @@ const char *help = "Usage: bk <file> <options>\n"
              " -o Output path\n"
              " -a Generate Assembly\n"
              " -r Run\n"
+             " -S Generate Assembly [without compiling]\n"
              " -v Version\n";
 
 int main(int argc, char *argv[])
 {
     int arg_r = 0;
     int arg_a = 0;
+    int arg_S = 0;
 
     if ( argc < 2 ) log(3, "%s", "bk: no input file.");
 
@@ -45,6 +47,7 @@ int main(int argc, char *argv[])
                 else if ( argv[0][1] == 'h' ) fprintf(stdout, "%s\n", help);
                 else if ( argv[0][1] == 'a' ) arg_a = 1;
                 else if ( argv[0][1] == 'r' ) arg_r = 1;
+                else if ( argv[0][1] == 'S' ) arg_S = 1;
                 else if ( argv[0][1] == 'o' )
                 {
                     if (argc > 1)
@@ -109,23 +112,17 @@ int main(int argc, char *argv[])
     strcat(output_asm, output_src); strcat(output_asm, ".s");
     struct ASTnode *node = parser_parse(parser);
     codegen_T *codegen = init_codegen(output_asm);
-
-#define if_execute_debug
-
-#ifdef if_execute_debug
     codegen_code(codegen, node);
-    if (!arg_a)
+
+    if (!arg_S)
     {
         exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
         exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
         exec_sys("rm ./%s.o", output_src);
-    }
-    if (arg_r) exec_sys("echo -e \"$(./%s)\"", output_src);
-#endif
 
-#ifndef debug
-        exec_sys("rm ./%s.s", output_src);
-#endif
+        if (arg_r) exec_sys("echo -e \"$(./%s)\"", output_src);
+        if (!arg_a) exec_sys("rm ./%s.s", output_src);
+    }
 
     return 0;
 }
