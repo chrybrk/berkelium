@@ -1,0 +1,20 @@
+i32 main()
+{
+    i32 table_of = 23;
+
+    for (i32 i = 1; i <= 10; i = i + 1)
+    {
+        print_i32(table_of);
+        print_byte(32);
+        print_byte(42);
+        print_byte(32);
+        print_i32(i);
+        print_byte(32);
+        print_byte(61);
+        print_byte(32);
+        print_i32(table_of * i);
+        print_byte(10);
+    }
+
+    return 0;
+}

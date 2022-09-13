@@ -18,6 +18,7 @@ const char *help = "Usage: bk <file> <options>\n"
              "Options:\n"
              " -o Output path\n"
              " -a Generate Assembly\n"
+             " -b bind c file\n"
              " -r Run\n"
              " -S Generate Assembly [without compiling]\n"
              " -v Version\n";
@@ -34,6 +35,7 @@ int main(int argc, char *argv[])
     char *file_extention = NULL;
     char *filename = NULL;
     char *output_src = NULL;
+    char *bind_src = NULL;
 
     while (argc != 1)
     {
@@ -48,6 +50,17 @@ int main(int argc, char *argv[])
                 else if ( argv[0][1] == 'a' ) arg_a = 1;
                 else if ( argv[0][1] == 'r' ) arg_r = 1;
                 else if ( argv[0][1] == 'S' ) arg_S = 1;
+                else if ( argv[0][1] == 'b' ) 
+                {
+                    if (argc > 1)
+                    {
+                        argv++; argc--;
+                        if ( argv[0][0] == '-' ) log(3, "%s", "bk: seg fault, expected file after `-b`");
+                        bind_src = argv[0];
+                    }
+                    else log(3, "%s", "bk: seg fault, expected file after `-b`");
+
+                }
                 else if ( argv[0][1] == 'o' )
                 {
                     if (argc > 1)
@@ -114,12 +127,18 @@ int main(int argc, char *argv[])
     codegen_T *codegen = init_codegen(output_asm);
     codegen_code(codegen, node);
 
-    if (!arg_S)
+    if (!arg_S && bind_src == NULL)
     {
         exec_sys("gcc -c ./%s -o ./%s.o", output_asm, output_src);
         exec_sys("gcc -no-pie ./%s.o -o ./%s", output_src, output_src);
         exec_sys("rm ./%s.o", output_src);
 
+        if (arg_r) exec_sys("echo -e \"$(./%s)\"", output_src);
+        if (!arg_a) exec_sys("rm ./%s.s", output_src);
+    }
+    else if (bind_src != NULL)
+    {
+        exec_sys("gcc %s ./%s -o ./%s", bind_src, output_asm, output_src);
         if (arg_r) exec_sys("echo -e \"$(./%s)\"", output_src);
         if (!arg_a) exec_sys("rm ./%s.s", output_src);
     }

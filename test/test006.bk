@@ -1,0 +1,48 @@
+void leap_year()
+{
+    print_byte(89);
+    print_byte(69);
+    print_byte(83);
+    print_byte(10);
+}
+
+void not_leap_year()
+{
+    print_byte(78);
+    print_byte(79);
+    print_byte(10);
+}
+
+i32 main()
+{
+    i32 year = 1994;
+    i32 div;
+
+    div = year % 4;
+    if (div == 0)
+    {
+        div = year % 100;
+        if (div == 0)
+        {
+            div = year % 400;
+            if (div == 0)
+            {
+                leap_year(0);
+            }
+            else
+            {
+                not_leap_year(1);
+            }
+        }
+        else
+        {
+            leap_year(0);
+        }
+    }
+    else
+    {
+        not_leap_year(1);
+    }
+
+    return 0;
+}

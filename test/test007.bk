@@ -1,0 +1,28 @@
+i32 main()
+{
+    i32 number = 723;
+    i32 original_number = number;
+    i32 reversed = 0;
+
+    while (number != 0)
+    {
+        i32 last_digit = number % 10;
+        i32 shit_size = reversed * 10;
+        reversed = shit_size + last_digit;
+        number = number / 10;
+    }
+
+    print_i32(original_number);
+    print_byte(10);
+    print_i32(reversed);
+    print_byte(10);
+
+    while (reversed != 0)
+    {
+        print_i32(reversed % 10);
+        print_byte(32);
+        reversed = reversed / 10;
+    }
+
+    return 0;
+}

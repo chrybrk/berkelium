@@ -1,0 +1,29 @@
+i32 main()
+{
+    byte h = 72;
+    byte e = 69;
+    byte l = 76;
+    byte o = 79;
+    byte w = 87;
+    byte r = 82;
+    byte d = 68;
+    byte space = 32;
+    byte excl = 33;
+    byte new_line = 10;
+
+    print_byte(h);
+    print_byte(e);
+    print_byte(l);
+    print_byte(l);
+    print_byte(o);
+    print_byte(space);
+    print_byte(w);
+    print_byte(o);
+    print_byte(r);
+    print_byte(l);
+    print_byte(d);
+    print_byte(excl);
+    print_byte(new_line);
+
+    return 0;
+}

@@ -1,0 +1,23 @@
+i32 main()
+{
+    i32 limit = 65 + 26;
+
+    for (i32 i = 65; i < limit; i = i + 1)
+    {
+        print_byte(i);
+        print_byte(32);
+    }
+
+    for (i32 k = 0; k <= 10; k = k + 1)
+    {
+        for (i32 j = 0; j < k; j = j + 1)
+        {
+            print_i32(j);
+            print_byte(32);
+        }
+
+        print_byte(10);
+    }
+
+    return 0;
+}

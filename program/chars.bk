@@ -1,0 +1,44 @@
+i32 main()
+{
+    byte a = 65;
+    byte b = 66;
+    byte c = 67;
+    byte d = 68;
+    byte e = 69;
+    byte f = 70;
+    byte g = 71;
+    byte h = 72;
+    byte i = 73;
+    byte j = 74;
+    byte k = 75;
+    byte l = 76;
+    byte m = 77;
+    byte n = 78;
+    byte o = 79;
+    byte p = 80;
+    byte q = 81;
+    byte r = 82;
+    byte s = 83;
+    byte t = 84;
+    byte u = 85;
+    byte v = 86;
+    byte w = 87;
+    byte x = 88;
+    byte z = 89;
+
+    byte new_line = 10;
+    byte whitespace = 32;
+    byte comma = 44;
+    byte excl = 33;
+    byte lparen = 40;
+    byte rparen = 41;
+    byte colon = 58;
+
+    print_byte(r);
+    print_byte(a);
+    print_byte(h);
+    print_byte(u);
+    print_byte(l);
+
+    return 0;
+}
