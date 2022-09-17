@@ -7,10 +7,9 @@
 
 char* read_file(const char* filename)
 {
-    FILE * fp;
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
+    FILE *fp;
+    char *line = NULL;
+    long len;
 
     fp = fopen(filename, "rb");
     if ( fp == NULL )
@@ -19,6 +18,7 @@ char* read_file(const char* filename)
         exit(1);
     }
 
+    /*
     char* buffer = (char*) calloc(1, sizeof(char));
     buffer[0] = '\0';
 
@@ -27,6 +27,16 @@ char* read_file(const char* filename)
         buffer = (char*) realloc(buffer, (strlen(buffer) + strlen(line) + 1) * sizeof(char));
         strcat(buffer, line);
     }
+    */
+
+    fseek(fp, 0L, SEEK_END);
+    len = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+    char *buffer = (char*)calloc(len, sizeof(char));
+    if (buffer == NULL)
+        return NULL;
+
+    fread(buffer, sizeof(char), len, fp);
 
     fclose(fp);
     if (line)

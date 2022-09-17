@@ -62,23 +62,10 @@ void preamble(FILE *outfile)
 {
     reg_freeall();
     fputs(
+#ifdef __unix__
         ".section    .note.GNU-stack,\"\",@progbits\n"
+#endif
         "\t.text\n"
-        ".LC0:\n"
-        "\t.string\t\"%d\\n\"\n"
-        "printint:\n"
-        "\tpushq\t%rbp\n"
-        "\tmovq\t%rsp, %rbp\n"
-        "\tsubq\t$16, %rsp\n"
-        "\tmovl\t%edi, -4(%rbp)\n"
-        "\tmovl\t-4(%rbp), %eax\n"
-        "\tmovl\t%eax, %esi\n"
-        "\tleaq	.LC0(%rip), %rdi\n"
-        "\tmovl	$0, %eax\n"
-        "\tcall	printf@PLT\n"
-        "\tnop\n"
-        "\tleave\n"
-        "\tret\n"
         "\n",
     outfile);
 }
@@ -411,7 +398,9 @@ int asm_compare_jump(FILE *outfile, int op, int r1, int r2, int label)
 void asm_function_preamble(FILE *outfile, char *name)
 {
     char *template_preamble = "\t.globl\t%s\n"
+#ifdef __unix__
                               "\t.type\t%s, @function\n"
+#endif
                               "%s:\n"
                               "\tpushq\t%%rbp\n"
                               "\tmovq\t%%rsp, %%rbp\n";
@@ -484,7 +473,11 @@ void asm_return(FILE *outfile, int r, int id)
 int asm_call(FILE *outfile, int r, int id)
 {
     int outr = reg_alloc();
+#ifdef __unix__
     fprintf(outfile, "\tmovq\t%s, %%rdi\n", reg[r]);
+#else
+    fprintf(outfile, "\tmovl\t%s, %%ecx\n", dreg[r]);
+#endif
     fprintf(outfile, "\tcall\t%s\n", symb_table_find(id)->name);
     fprintf(outfile, "\tmovq\t%%rax, %s\n", reg[outr]);
     reg_free(r);
