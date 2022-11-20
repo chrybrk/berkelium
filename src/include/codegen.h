@@ -27,6 +27,8 @@ void reg_freeall();
 int asm_loadint(FILE *outfile, int value);
 int asm_loadglob(FILE *outfile, char *value);
 int asm_storeglob(FILE *outfile, char *name, int r);
+int asm_addr(FILE *outfile, int r);
+int asm_defr(FILE *outfile, int r, int t);
 int asm_add(FILE *outfile, int r1, int r2);
 int asm_sub(FILE *outfile, int r1, int r2);
 int asm_mul(FILE *outfile, int r1, int r2);

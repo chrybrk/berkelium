@@ -87,6 +87,35 @@ parser_T *init_parser(lexer_T *lexer)
     return new_parser;
 }
 
+struct ASTnode *prefix(parser_T *parser)
+{
+    struct ASTnode *tree;
+    switch (parser->token->token)
+    {
+        case T_AMPER:
+            {
+                eat(parser, parser->token->token);
+                tree = prefix(parser);
+
+                if (tree->op != AST_IDENT) log(3, "%s", "& op must followed by an identifier.");
+                tree->op = AST_ADDR; tree->type = pointer_to(tree->type);
+                break;
+            }
+        case T_STAR:
+            {
+                eat(parser, parser->token->token);
+                tree = prefix(parser);
+                if (tree->op != AST_IDENT && tree->op != AST_DEREF) log(3, "%s", "* op must be followed by an identifier or *");
+
+                tree = ASTnode_unary(AST_DEREF, pointer_at(tree->type), tree, 0);
+                break;
+            }
+        default: tree = primary(parser);
+    }
+
+    return tree;
+}
+
 struct ASTnode *primary(parser_T *parser)
 {
     switch (parser->token->token)
@@ -127,7 +156,7 @@ struct ASTnode *parser_parse_expr(parser_T *parser, int tok_prec)
     struct ASTnode *left, *right;
     struct token *tok;
 
-    left = primary(parser);
+    left = prefix(parser);
 
     tok = parser->token;
     if (tok->token == T_SEMI || tok->token == T_RPAREN)
@@ -189,7 +218,7 @@ struct ASTnode *parser_parse_print(parser_T *parser)
 
 struct ASTnode *parser_parse_variable_decl(parser_T *parser)
 {
-    int type = get_prem_type(eat(parser, parser->token->token)->token);
+    int type = get_prem_type(parser);
 
     if (type == P_void) log(3, "%s\n", "invalid variable type `void`");
 
@@ -235,6 +264,7 @@ struct ASTnode *parser_parse_assignment(parser_T *parser)
     expected_tok(parser, T_ASSIGN);
 
     left = parser_parse_expr(parser, 0);
+    // left = prefix(parser);
     // left->type = symb_table_find(id)->type;
 
     left->type = right->type;
@@ -315,10 +345,13 @@ struct ASTnode *parser_parse_for(parser_T *parser)
 struct ASTnode *parser_parse_decl(parser_T *parser)
 {
     struct token *pk = token_peek(parser->lexer, 2);
-
     if (pk->token == T_ASSIGN || pk->token == T_SEMI) return parser_parse_variable_decl(parser);
 
-    int type = get_prem_type(eat(parser, parser->token->token)->token);
+    pk = token_peek(parser->lexer, 1);
+    if (pk->token == T_STAR || pk->token == T_AMPER) return parser_parse_variable_decl(parser);
+
+
+    int type = get_prem_type(parser);
 
     char *ident = calloc(1, sizeof(strlen(parser->token->value)));
     strcpy(ident, parser->token->value);
@@ -394,7 +427,6 @@ struct ASTnode *parser_parse_statement(parser_T *parser)
 
     switch (parser->token->token)
     {
-        case T_PRINT: tree = parser_parse_print(parser); break;
         case T_IF: tree = parser_parse_if(parser); break;
         case T_WHILE: tree = parser_parse_while(parser); break;
         case T_FOR: tree = parser_parse_for(parser); break;
@@ -466,19 +498,27 @@ struct ASTnode *parser_parse(parser_T *parser)
     return left;
 }
 
-int get_prem_type(int type)
+int get_prem_type(parser_T *parser)
 {
-    switch (type)
+    int newtype;
+    switch (parser->token->token)
     {
-        case T_void: return P_void;
-        case T_byte: return P_byte;
-        case T_i16:return P_i16;
-        case T_i32: return P_i32;
-        case T_i64: return P_i64;
+        case T_void: newtype = P_void; break;
+        case T_byte: newtype = P_byte; break;
+        case T_i16: newtype = P_i16; break;
+        case T_i32: newtype = P_i32; break;
+        case T_i64: newtype = P_i64; break;
         default: log(3, "%s", "Unrecognised data type.");
     }
 
-    return -1;
+    while(1)
+    {
+        eat(parser, parser->token->token);
+        if (parser->token->token != T_STAR) break;
+        newtype = pointer_to(newtype);
+    }
+
+    return newtype;
 }
 
 int get_prem_size(int type)
@@ -489,7 +529,13 @@ int get_prem_size(int type)
         case P_byte: return 1;
         case P_i16: return 2;
         case P_i32: return 4;
-        case P_i64: return 8;
+        case P_i64:
+        case P_voidptr:
+        case P_byteptr:
+        case P_i16ptr:
+        case P_i32ptr:
+        case P_i64ptr:
+                    return 8;
         default: return 0;
     }
 }
@@ -519,4 +565,36 @@ int type_check(int left, int right)
     if (left_size > right_size) log(2, "`%s` size is smaller than `%s`.", get_prem_size_str(right_size), get_prem_size_str(left_size));
 
     return 0;
+}
+
+int pointer_to(int type)
+{
+    int newtype;
+    switch (type)
+    {
+        case P_void: newtype = P_voidptr; break;
+        case P_byte: newtype = P_byteptr; break;
+        case P_i16: newtype = P_i16ptr; break;
+        case P_i32: newtype = P_i32ptr; break;
+        case P_i64: newtype = P_i64ptr; break;
+        default: log(3, "%s", "failed to locate pointer to unknown pointer type.");
+    }
+
+    return newtype;
+}
+
+int pointer_at(int type)
+{
+    int newtype;
+    switch (type)
+    {
+        case P_voidptr: newtype = P_void; break;
+        case P_byteptr: newtype = P_byte; break;
+        case P_i16ptr: newtype = P_i16; break;
+        case P_i32ptr: newtype = P_i32; break;
+        case P_i64ptr: newtype = P_i64; break;
+        default: log(3, "%s", "failed to locate pointer at unknown pointer type.");
+    }
+
+    return newtype;
 }

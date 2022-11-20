@@ -187,6 +187,8 @@ int genAST(codegen_T *codegen, struct ASTnode *node, int reg, int parent_op)
         case AST_WIDE: return asm_wide(left, node->left->type, node->type);
         case AST_RETURN: asm_return(codegen->outfile, left, node->intvalue); return -1;
         case AST_FUNCTION_CALL: return asm_call(codegen->outfile, left, node->intvalue);
+        case AST_ADDR: return asm_addr(codegen->outfile, node->intvalue);
+        case AST_DEREF: return asm_defr(codegen->outfile, left, node->left->type);
         default: log(3, "%s", "Unrecognised ASTnode:Type");
     }
 
@@ -257,6 +259,10 @@ int asm_loadglob(FILE *outfile, char *value)
             break;
 
         case P_i64:
+        case P_byteptr:
+        case P_i16ptr:
+        case P_i32ptr:
+        case P_i64ptr:
             fprintf(outfile, "\tmovq\t%s(\%%rip), %s\n", value, reg[r]);
             break;
         
@@ -288,12 +294,46 @@ int asm_storeglob(FILE *outfile, char *name, int r)
             break;
 
         case P_i64:
+        case P_byteptr:
+        case P_i16ptr:
+        case P_i32ptr:
+        case P_i64ptr:
             fprintf(outfile, "\tmovq\t%s, %s(\%%rip)\n", reg[r], name);
             break;
         
         default: log(3, "%s", "invalid size.");
     }
 
+
+    return r;
+}
+
+int asm_addr(FILE *outfile, int r)
+{
+    int x = reg_alloc();
+
+    fprintf(outfile, "\tleaq\t%s(%%rip), %s\n", symb_table_find(r)->name, reg[x]);
+
+    return x;
+}
+
+int asm_defr(FILE *outfile, int r, int t)
+{
+    switch (t)
+    {
+        case P_byteptr:
+            fprintf(outfile, "\tmovzbq\t(%s), %s\n", reg[r], reg[r]);
+            break;
+
+        case P_i16ptr:
+            fprintf(outfile, "\tmovzwq\t(%s), %s\n", reg[r], reg[r]);
+            break;
+
+        case P_i32ptr:
+        case P_i64ptr:
+            fprintf(outfile, "\tmovq\t(%s), %s\n", reg[r], reg[r]);
+            break;
+    }
 
     return r;
 }

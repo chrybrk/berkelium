@@ -188,6 +188,7 @@ struct token *lexer_next_token(lexer_T *lexer)
             case '!': return lex_advance_twos(lexer, '=', T_NEQ, T_NOT);
             case '<': return lex_advance_twos(lexer, '=', T_LEQ, T_LT);
             case '>': return lex_advance_twos(lexer, '=', T_GEQ, T_GT);
+            case '&': return lex_advance_twos(lexer, '&', T_LOGAND, T_AMPER);
             case '(': return lex_advance_current(lexer, T_LPAREN);
             case ')': return lex_advance_current(lexer, T_RPAREN);
             case '{': return lex_advance_current(lexer, T_LBRACE);

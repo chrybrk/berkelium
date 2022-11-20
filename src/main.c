@@ -7,10 +7,9 @@
 
 #include "include/lexer.h"
 #include "include/parser.h"
-#include "include/interpret.h"
 #include "include/codegen.h"
 
-#define version "0.0.2"
+#define version "0.0.5"
 #define debug
 
 
@@ -45,31 +44,33 @@ int main(int argc, char *argv[])
         {
             case '-':
             {
-                if ( argv[0][1] == 'v' ) fprintf(stdout, "version: %s\n", version);
-                else if ( argv[0][1] == 'h' ) fprintf(stdout, "%s\n", help);
-                else if ( argv[0][1] == 'a' ) arg_a = 1;
-                else if ( argv[0][1] == 'r' ) arg_r = 1;
-                else if ( argv[0][1] == 'S' ) arg_S = 1;
-                else if ( argv[0][1] == 'b' ) 
+                switch ( argv[0][1] )
                 {
-                    if (argc > 1)
-                    {
-                        argv++; argc--;
-                        if ( argv[0][0] == '-' ) log(3, "%s", "bk: seg fault, expected file after `-b`");
-                        bind_src = argv[0];
-                    }
-                    else log(3, "%s", "bk: seg fault, expected file after `-b`");
-
-                }
-                else if ( argv[0][1] == 'o' )
-                {
-                    if (argc > 1)
-                    {
-                        argv++; argc--;
-                        if ( argv[0][0] == '-' ) log(3, "%s", "bk: seg fault, expected file after `-o`");
-                        output_src = argv[0];
-                    }
-                    else log(3, "%s", "bk: seg fault, expected file after `-o`");
+                    case 'v': fprintf(stdout, "version: %s\n", version); break;
+                    case 'h': fprintf(stdout, "%s\n", help); break;
+                    case 'a': arg_a = 1; break;
+                    case 'r': arg_r = 1; break;
+                    case 'S': arg_S = 1; break;
+                    case 'b':
+                            {
+                                if (argc > 1)
+                                {
+                                    argv++; argc--;
+                                    if ( argv[0][0] == '-' ) log(3, "%s", "bk: seg fault, expected file after `-b`");
+                                    bind_src = argv[0];
+                                }
+                                else log(3, "%s", "bk: seg fault, expected file after `-b`");
+                            } break;
+                    case 'o':
+                            {
+                                if (argc > 1)
+                                {
+                                    argv++; argc--;
+                                    if ( argv[0][0] == '-' ) log(3, "%s", "bk: seg fault, expected file after `-o`");
+                                    output_src = argv[0];
+                                }
+                                else log(3, "%s", "bk: seg fault, expected file after `-o`");
+                            } break;
                 }
                 break;
             }
@@ -85,6 +86,9 @@ int main(int argc, char *argv[])
         if (file_extention == NULL) file_extention = calloc(1, sizeof(char));
         collect(file_extention, fp[i]);
     }
+    swap(file_extention);
+
+    if (strcmp(file_extention, "bk")) log(3, "%s", "file format not supported.");
 
     for (int i = (strlen(fp) - strlen(file_extention) - 2); i >= 0; i--)
     {
@@ -92,8 +96,6 @@ int main(int argc, char *argv[])
         if (filename == NULL) filename = calloc(1, sizeof(char));
         collect(filename, fp[i]);
     }
-
-    swap(file_extention);
     swap(filename);
 
     int size = strlen(fp) - (strlen(file_extention) + strlen(filename) + 1);
@@ -140,7 +142,7 @@ int main(int argc, char *argv[])
     {
         exec_sys("gcc %s ./%s -o ./%s", bind_src, output_asm, output_src);
         if (arg_r) exec_sys("echo -e \"$(./%s)\"", output_src);
-        if (!arg_a) exec_sys("rm ./%s.s", output_src);
+        if (arg_S) exec_sys("rm ./%s.s", output_src);
     }
 
     return 0;

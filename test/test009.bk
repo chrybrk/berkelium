@@ -1,0 +1,11 @@
+i32 main()
+{
+    i64 a = 10;
+    i64 *b = &a;
+    i64 c = *b;
+
+    print_i32(a); print_byte(10);
+    print_i32(c);
+
+    return 0;
+}

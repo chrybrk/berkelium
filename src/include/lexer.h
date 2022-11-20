@@ -35,12 +35,17 @@ enum
   T_WHILE,
   T_FOR,
   T_RETURN,
+
   // data types
   T_void,
   T_i16,
   T_i32,
   T_i64,
-  T_byte
+  T_byte,
+
+  // stuff
+  T_AMPER,
+  T_LOGAND
 };
 
 struct token

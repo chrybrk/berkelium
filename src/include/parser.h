@@ -30,12 +30,15 @@ enum
     AST_RETURN,
     AST_GLUE,
     AST_NOOP,
-    AST_WIDE
+    AST_WIDE,
+    AST_ADDR,
+    AST_DEREF
 };
 
 enum
 {
-    P_nil, P_void, P_byte, P_i16, P_i32, P_i64
+    P_nil, P_void, P_byte, P_i16, P_i32, P_i64,
+    P_voidptr, P_byteptr, P_i16ptr, P_i32ptr, P_i64ptr
 };
 
 struct ASTnode
@@ -69,7 +72,10 @@ struct ASTnode *parser_parse_call(parser_T *parser);
 struct ASTnode *parser_parse_compound_statements(parser_T *parser);
 struct ASTnode *parser_parse(parser_T *parser);
 
-int get_prem_type(int type);
+int get_prem_type(parser_T *parser);
 int get_prem_size(int type);
 char *get_prem_size_str(int size);
 int type_check(int left, int right);
+
+int pointer_to(int type);
+int pointer_at(int type);
