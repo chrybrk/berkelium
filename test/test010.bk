@@ -1,0 +1,13 @@
+i32 main()
+{
+    i32 x; i32 y;
+    i32 *z;
+
+    x = 10; y = 20;
+    z = &x;
+    print_i32(*z);
+    print_byte(10);
+    print_addr(z);
+
+    return 0;
+}

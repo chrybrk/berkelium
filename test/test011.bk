@@ -1,0 +1,13 @@
+i32 a, b, c;
+
+i32 main()
+{
+    a = 10;
+    b = 20;
+
+    print_i32(a);
+    print_byte(32);
+    print_i32(b);
+
+    return 0;
+}

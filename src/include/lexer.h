@@ -16,6 +16,7 @@ enum
   T_LBRACE,
   T_RBRACE,
   T_SEMI,
+  T_COMMA,
   T_ASSIGN,
   T_NOT,
   T_EQU,

@@ -9,7 +9,7 @@
 #include "include/parser.h"
 #include "include/codegen.h"
 
-#define version "0.0.5"
+#define version "0.0.6"
 #define debug
 
 

@@ -2,9 +2,7 @@
 
 int main(void)
 {
-    int a = 10;
-    int *b = &a;
-
+    int a = (int)0xa;
     printf("%i", a);
 
     return 0;

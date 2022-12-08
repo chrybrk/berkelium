@@ -22,6 +22,11 @@ void print_i64(long x)
     printf("%ld", x);
 }
 
+void print_addr(void *x)
+{
+    printf("%p", x);
+}
+
 void ln(int x)
 {
     printf("\n");

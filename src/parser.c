@@ -64,7 +64,7 @@ int ASTnode_op_prec(struct token *token)
         case T_EQU:
         case T_NEQ:
             return 30;
-        
+
         case T_LT:
         case T_GT:
         case T_LEQ:
@@ -222,31 +222,33 @@ struct ASTnode *parser_parse_variable_decl(parser_T *parser)
 
     if (type == P_void) log(3, "%s\n", "invalid variable type `void`");
 
-    int clm = parser->lexer->clm;
-    int ln = parser->lexer->ln;
-    char c = parser->lexer->c;
-    unsigned int i = parser->lexer->i;
-    struct token *tok = parser->token;
-
-    char *ident = calloc(1, sizeof(strlen(parser->token->value)));
-    strcpy(ident, parser->token->value);
-    eat(parser, T_IDENT);
-
-    create_symb_table(ident, type, S_VARIABLE, 0);
-    // asm_genglob(codegen->outfile, ident);
-
-    if (parser->token->token == T_SEMI)
-        eat(parser, T_SEMI);
-    else
+    while (1)
     {
-        parser->lexer->clm = clm;
-        parser->lexer->ln = ln;
-        parser->lexer->c = c;
-        parser->lexer->i = i;
-        parser->token = tok;
+        int clm = parser->lexer->clm;
+        int ln = parser->lexer->ln;
+        char c = parser->lexer->c;
+        unsigned int i = parser->lexer->i;
+        struct token *tok = parser->token;
+
+        char *ident = calloc(1, sizeof(strlen(parser->token->value)));
+        strcpy(ident, parser->token->value);
+        eat(parser, T_IDENT);
+
+        create_symb_table(ident, type, S_VARIABLE, 0);
+        // asm_genglob(codegen->outfile, ident);
+
+        if (parser->token->token == T_SEMI) { eat(parser, T_SEMI); return NULL; }
+
+        else if (parser->token->token == T_COMMA) { eat(parser, T_COMMA); continue; }
+
+        else
+        {
+            parser->lexer->clm = clm; parser->lexer->ln = ln; parser->lexer->c = c; parser->lexer->i = i; parser->token = tok;
+            return NULL;
+        }
     }
 
-    return NULL;
+    log(3, "%s", "expected ; or ,");
 }
 
 struct ASTnode *parser_parse_assignment(parser_T *parser)
@@ -345,7 +347,7 @@ struct ASTnode *parser_parse_for(parser_T *parser)
 struct ASTnode *parser_parse_decl(parser_T *parser)
 {
     struct token *pk = token_peek(parser->lexer, 2);
-    if (pk->token == T_ASSIGN || pk->token == T_SEMI) return parser_parse_variable_decl(parser);
+    if (pk->token == T_ASSIGN || pk->token == T_SEMI || pk->token == T_COMMA) return parser_parse_variable_decl(parser);
 
     pk = token_peek(parser->lexer, 1);
     if (pk->token == T_STAR || pk->token == T_AMPER) return parser_parse_variable_decl(parser);
